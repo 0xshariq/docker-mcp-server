@@ -1,15 +1,42 @@
 {
   "name": "docker-mcp-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "type": "module",
+  "bin": {
+    "docker-mcp-server": "./docker-cli.js",
+    "dms": "./docker-cli.js",
+    "dlist": "./bin/dlist.js",
+    "dimages": "./bin/basic/dimages.js",
+    "dps": "./bin/basic/dps.js",
+    "dpsa": "./bin/basic/dpsa.js",
+    "dpull": "./bin/basic/dpull.js",
+    "drun": "./bin/basic/drun.js",
+    "dlogs": "./bin/basic/dlogs.js",
+    "dexec": "./bin/basic/dexec.js",
+    "dbuild": "./bin/basic/dbuild.js",
+    "dcompose": "./bin/advanced/dcompose.js",
+    "dup": "./bin/advanced/dup.js",
+    "ddown": "./bin/advanced/ddown.js",
+    "dnetwork": "./bin/advanced/dnetwork.js",
+    "dvolume": "./bin/advanced/dvolume.js",
+    "dinspect": "./bin/advanced/dinspect.js",
+    "dprune": "./bin/advanced/dprune.js",
+    "dlogin": "./bin/advanced/dlogin.js",
+    "ddev": "./bin/advanced/ddev.js",
+    "dclean": "./bin/advanced/dclean.js",
+    "dstop": "./bin/advanced/dstop.js",
+    "dreset": "./bin/advanced/dreset.js"
+  },
   "scripts": {
     "build": "tsc -p .",
     "start": "node dist/index.js",
     "dev": "tsc -w & node dist/index.js",
     "dev:build": "tsc && node dist/index.js",
     "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "cli": "node docker-cli.js",
+    "cli:help": "node docker-cli.js help"
   },
   "author": "Sharique Chaudhary",
   "license": "ISC",
@@ -17,8 +44,7 @@
   "dependencies": {
     "@modelcontextprotocol/inspector": "^0.16.1",
     "@modelcontextprotocol/sdk": "^1.15.1",
-    "express": "^5.1.0",
-    "zod": "^4.0.5"
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.14",
