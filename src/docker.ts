@@ -751,24 +751,19 @@ export async function dockerLogin(params: DockerLoginParams = {}): Promise<Docke
     if (token) {
       // Token-based authentication (for GitHub Container Registry, etc.)
       command += ` --username token --password-stdin`;
-      
       // Execute command with stdin input
       const { spawn } = await import('child_process');
-      const process = spawn('sh', ['-c', command], {
+      const proc = spawn('sh', ['-c', command], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
-      
-      process.stdin.write(token);
-      process.stdin.end();
-      
-      const result = await new Promise((resolve, reject) => {
+      proc.stdin.write(token);
+      proc.stdin.end();
+      const result: { stdout: string; stderr: string } = await new Promise((resolve, reject) => {
         let stdout = '';
         let stderr = '';
-        
-        process.stdout.on('data', (data) => stdout += data.toString());
-        process.stderr.on('data', (data) => stderr += data.toString());
-        
-        process.on('close', (code) => {
+        proc.stdout.on('data', (data) => stdout += data.toString());
+        proc.stderr.on('data', (data) => stderr += data.toString());
+        proc.on('close', (code) => {
           if (code === 0) {
             resolve({ stdout, stderr });
           } else {
@@ -776,29 +771,23 @@ export async function dockerLogin(params: DockerLoginParams = {}): Promise<Docke
           }
         });
       });
-      
       const message = `🔐 Successfully logged in to ${registry} using token authentication\n\n${result.stdout}`;
       return createResponse('docker-login', message, false, process.cwd(), startTime);
     } else if (username && password) {
       // Username/password authentication
       command += ` -u "${username}" --password-stdin`;
-      
       // Execute command with stdin input
       const { spawn } = await import('child_process');
       const loginProcess = spawn('sh', ['-c', command], {
         stdio: ['pipe', 'pipe', 'pipe']
       });
-      
       loginProcess.stdin.write(password);
       loginProcess.stdin.end();
-      
-      const result = await new Promise((resolve, reject) => {
+      const result: { stdout: string; stderr: string } = await new Promise((resolve, reject) => {
         let stdout = '';
         let stderr = '';
-        
         loginProcess.stdout.on('data', (data) => stdout += data.toString());
         loginProcess.stderr.on('data', (data) => stderr += data.toString());
-        
         loginProcess.on('close', (code) => {
           if (code === 0) {
             resolve({ stdout, stderr });
@@ -807,7 +796,6 @@ export async function dockerLogin(params: DockerLoginParams = {}): Promise<Docke
           }
         });
       });
-      
       const message = `🔐 Successfully logged in to ${registry} as ${username}\n\n${result.stdout}`;
       return createResponse('docker-login', message, false, process.cwd(), startTime);
     } else if (interactive) {

@@ -1,37 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dpull - Pull Docker image
- * 
- * Pulls a Docker image from a registry.
- * 
- * Usage:
- *   dpull <imageName>          # Pull specific image
- *   dpull nginx                # Pull nginx image
- *   dpull nginx:alpine         # Pull specific tag
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, imageName, ...args] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  if (!imageName) {
-    console.error('❌ Error: Image name is required');
-    console.log('Usage: dpull <imageName>');
-    console.log('Example: dpull nginx');
-    process.exit(1);
-  }
-  
-  console.log(`🐳 Pulling Docker image: ${imageName}...`);
-  
-  try {
-    await helper.callTool('docker-pull', { imageName });
-  } catch (error) {
-    console.error('💥 Failed to pull image:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

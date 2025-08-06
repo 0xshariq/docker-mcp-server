@@ -57,6 +57,7 @@ const WORKFLOW_COMBINATIONS = [
   { alias: 'dinspect', command: 'docker-inspect', description: 'Inspect Docker objects', usage: 'dinspect <type> <id>' },
   { alias: 'dprune', command: 'docker-prune', description: 'Remove unused Docker objects', usage: 'dprune [type]' },
   { alias: 'dlogin', command: 'docker-login', description: 'Login to Docker registry', usage: 'dlogin [registry]' },
+  { alias: 'dlist', command: 'docker-list', description: 'List all available tools and aliases', usage: 'dlist' },
   
   // === WORKFLOW COMBINATIONS ===
   { alias: 'ddev', description: 'Development workflow: build and run', usage: 'ddev <dockerfile-path> <image-name>' },
@@ -299,15 +300,30 @@ async function main() {
   const [,, tool, ...argsArray] = process.argv;
   const client = new DockerMCPClient();
 
-  // Check if we're being called as an alias
+  // Check if we're being called as an alias - improved detection
   const scriptName = path.basename(process.argv[1]);
+  const execName = path.basename(process.argv[0]); // Also check the executable name
+  
   let actualTool = tool;
   let actualArgs = argsArray;
   
-  // If called as an alias
-  if (scriptName !== 'docker-cli.js' && scriptName !== 'docker-mcp-server' && scriptName !== 'dms') {
+  // List of known aliases from package.json bin
+  const knownAliases = [
+    'dimages', 'dps', 'dpsa', 'dpull', 'drun', 'dlogs', 'dexec', 'dbuild',
+    'dcompose', 'dup', 'ddown', 'dnetwork', 'dvolume', 'dinspect', 'dprune', 
+    'dlogin', 'ddev', 'dclean', 'dstop', 'dreset', 'dlist'
+  ];
+  
+  // If called as an alias (either script name or executable name matches an alias)
+  if (knownAliases.includes(scriptName) || knownAliases.includes(execName)) {
+    actualTool = knownAliases.includes(scriptName) ? scriptName : execName;
+    actualArgs = [tool, ...argsArray].filter(Boolean);
+    console.log(`🔗 Called as alias: ${actualTool}`);
+  } else if (scriptName !== 'docker-cli.js' && scriptName !== 'docker-mcp-server' && scriptName !== 'dms') {
+    // Fallback: if not main script names, treat script name as tool
     actualTool = scriptName;
     actualArgs = [tool, ...argsArray].filter(Boolean);
+    console.log(`🔗 Called as script: ${actualTool}`);
   }
 
   // Show current directory context
