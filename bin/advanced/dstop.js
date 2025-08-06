@@ -1,56 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dstop - Stop Docker containers and services
- * 
- * Stops Docker containers with various options.
- * 
- * Usage:
- *   dstop myapp               # Stop specific container
- *   dstop all                 # Stop all running containers
- *   dstop --pattern web       # Stop containers matching pattern
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, target, ...args] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  if (!target) {
-    console.error('❌ Error: Target is required');
-    console.log('Usage: dstop <target> [options]');
-    console.log('Targets:');
-    console.log('  <container>            # Stop specific container');
-    console.log('  all                    # Stop all running containers');
-    console.log('  --pattern <pattern>    # Stop containers matching pattern');
-    process.exit(1);
-  }
-  
-  console.log(`🐳 Stopping Docker containers: ${target}...`);
-  
-  const params = { target };
-  
-  // Parse pattern option
-  if (target === '--pattern' && args[0]) {
-    params.pattern = args[0];
-    console.log(`🔍 Pattern: ${args[0]}`);
-  }
-  
-  // Parse timeout option
-  args.forEach(arg => {
-    if (arg.startsWith('--timeout=')) {
-      params.timeout = parseInt(arg.split('=')[1]);
-      console.log(`⏱️  Timeout: ${params.timeout}s`);
-    }
-  });
-  
-  try {
-    await helper.callTool('docker-stop', params);
-  } catch (error) {
-    console.error('💥 Failed to stop containers:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

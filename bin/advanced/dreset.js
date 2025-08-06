@@ -1,52 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dreset - Reset Docker environment
- * 
- * Resets Docker environment to clean state.
- * 
- * Usage:
- *   dreset containers         # Reset containers only
- *   dreset images             # Reset images only
- *   dreset networks           # Reset networks only
- *   dreset volumes            # Reset volumes only
- *   dreset all                # Complete reset
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, scope] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  if (!scope) {
-    console.error('❌ Error: Reset scope is required');
-    console.log('Usage: dreset <scope>');
-    console.log('Reset Scopes:');
-    console.log('  containers             # Reset containers only');
-    console.log('  images                 # Reset images only');
-    console.log('  networks               # Reset networks only');
-    console.log('  volumes                # Reset volumes only');
-    console.log('  all                    # Complete reset');
-    process.exit(1);
-  }
-  
-  const validScopes = ['containers', 'images', 'networks', 'volumes', 'all'];
-  if (!validScopes.includes(scope)) {
-    console.error(`❌ Error: Invalid reset scope '${scope}'`);
-    console.log('Valid scopes:', validScopes.join(', '));
-    process.exit(1);
-  }
-  
-  console.log(`🐳 Resetting Docker environment: ${scope}...`);
-  console.log('⚠️  This will remove Docker resources');
-  
-  try {
-    await helper.callTool('docker-reset', { scope });
-  } catch (error) {
-    console.error('💥 Failed to reset environment:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

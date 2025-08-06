@@ -1,45 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dinspect - Inspect Docker resources
- * 
- * Inspects Docker containers, images, networks, or volumes in detail.
- * 
- * Usage:
- *   dinspect container myapp   # Inspect container
- *   dinspect image nginx       # Inspect image
- *   dinspect network mynet     # Inspect network
- *   dinspect volume myvol      # Inspect volume
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, resourceType, resourceName] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  if (!resourceType || !resourceName) {
-    console.error('❌ Error: Resource type and name are required');
-    console.log('Usage: dinspect <resourceType> <resourceName>');
-    console.log('Resource Types:');
-    console.log('  container <name>       # Inspect container');
-    console.log('  image <name>           # Inspect image');
-    console.log('  network <name>         # Inspect network');
-    console.log('  volume <name>          # Inspect volume');
-    process.exit(1);
-  }
-  
-  console.log(`🐳 Inspecting Docker ${resourceType}: ${resourceName}...`);
-  
-  try {
-    await helper.callTool('docker-inspect', { 
-      resourceType,
-      resourceName 
-    });
-  } catch (error) {
-    console.error('💥 Failed to inspect resource:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

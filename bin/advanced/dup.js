@@ -1,55 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dup - Docker Compose up
- * 
- * Convenience script for 'docker-compose up'.
- * Starts all services defined in docker-compose.yml.
- * 
- * Usage:
- *   dup                        # Start services
- *   dup -f custom.yml          # Use custom compose file
- *   dup -d                     # Run in detached mode
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, ...args] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  console.log('🐳 Starting Docker Compose services...');
-  
-  let command = 'up';
-  const params = { command };
-  
-  // Parse options
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    
-    if (arg === '-d' || arg === '--detach') {
-      command += ' -d';
-      console.log('🔄 Running in detached mode');
-    } else if (arg === '-f' || arg === '--file') {
-      if (args[i + 1]) {
-        params.filePath = args[i + 1];
-        console.log(`📄 Compose file: ${params.filePath}`);
-        i++; // Skip next arg
-      }
-    } else if (arg.startsWith('--file=')) {
-      params.filePath = arg.split('=')[1];
-      console.log(`📄 Compose file: ${params.filePath}`);
-    }
-  }
-  
-  params.command = command;
-  
-  try {
-    await helper.callTool('docker-compose', params);
-  } catch (error) {
-    console.error('💥 Failed to start services:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

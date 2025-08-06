@@ -1,38 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dlogin - Login to Docker registry
- * 
- * Logs into Docker registries for pulling/pushing images.
- * 
- * Usage:
- *   dlogin                     # Login to Docker Hub
- *   dlogin myregistry.com      # Login to custom registry
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, registry] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  console.log('🐳 Logging into Docker registry...');
-  
-  const params = {};
-  
-  if (registry) {
-    params.registry = registry;
-    console.log(`🔐 Registry: ${registry}`);
-  } else {
-    console.log('🔐 Registry: Docker Hub (default)');
-  }
-  
-  try {
-    await helper.callTool('docker-login', params);
-  } catch (error) {
-    console.error('💥 Failed to login:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

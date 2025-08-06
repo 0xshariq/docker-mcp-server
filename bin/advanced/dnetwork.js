@@ -1,65 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dnetwork - Manage Docker networks
- * 
- * Manages Docker networks with various operations.
- * 
- * Usage:
- *   dnetwork list              # List all networks
- *   dnetwork create mynet      # Create network
- *   dnetwork remove mynet      # Remove network
- *   dnetwork inspect mynet     # Inspect network
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, action, networkName, ...args] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  if (!action) {
-    console.error('❌ Error: Action is required');
-    console.log('Usage: dnetwork <action> [networkName] [options]');
-    console.log('Actions:');
-    console.log('  list                   # List all networks');
-    console.log('  create <name>          # Create network');
-    console.log('  remove <name>          # Remove network');
-    console.log('  inspect <name>         # Inspect network');
-    process.exit(1);
-  }
-  
-  console.log(`🐳 Managing Docker networks: ${action}...`);
-  
-  const params = { action };
-  
-  if (networkName) {
-    params.networkName = networkName;
-    console.log(`🌐 Network: ${networkName}`);
-  }
-  
-  // Parse driver option for create
-  if (action === 'create') {
-    args.forEach(arg => {
-      if (arg.startsWith('--driver=')) {
-        params.driver = arg.split('=')[1];
-        console.log(`🔧 Driver: ${params.driver}`);
-      }
-    });
-  }
-  
-  // Validate required parameters
-  if ((action === 'create' || action === 'remove' || action === 'inspect') && !networkName) {
-    console.error(`❌ Error: Network name is required for ${action} action`);
-    process.exit(1);
-  }
-  
-  try {
-    await helper.callTool('docker-network', params);
-  } catch (error) {
-    console.error('💥 Failed to manage network:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});

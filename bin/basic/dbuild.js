@@ -1,67 +1,26 @@
 #!/usr/bin/env node
 
-/**
- * dbuild - Build Docker image
- * 
- * Builds a Docker image from a Dockerfile in the specified context.
- * 
- * Usage:
- *   dbuild <contextPath>               # Build from context
- *   dbuild . --tag=myapp               # Build and tag
- *   dbuild ./app -f Dockerfile.prod    # Custom Dockerfile
- */
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-import { DockerMCPHelper } from('../docker-mcp-helper.js');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-async function main() {
-  const [,, contextPath, ...args] = process.argv;
-  const helper = new DockerMCPHelper();
-  
-  if (!contextPath) {
-    console.error('❌ Error: Context path is required');
-    console.log('Usage: dbuild <contextPath> [options]');
-    console.log('Examples:');
-    console.log('  dbuild .                       # Build from current directory');
-    console.log('  dbuild ./app --tag=myapp       # Build and tag');
-    console.log('  dbuild . -f Dockerfile.prod    # Custom Dockerfile');
-    process.exit(1);
-  }
-  
-  console.log(`🐳 Building Docker image from context: ${contextPath}...`);
-  
-  const params = { contextPath };
-  
-  // Parse options
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    
-    if (arg.startsWith('--tag=')) {
-      params.tag = arg.split('=')[1];
-      console.log(`🏷️  Tag: ${params.tag}`);
-    } else if (arg === '-t' || arg === '--tag') {
-      if (args[i + 1]) {
-        params.tag = args[i + 1];
-        console.log(`🏷️  Tag: ${params.tag}`);
-        i++; // Skip next arg
-      }
-    } else if (arg === '-f' || arg === '--file') {
-      if (args[i + 1]) {
-        params.dockerfilePath = args[i + 1];
-        console.log(`📄 Dockerfile: ${params.dockerfilePath}`);
-        i++; // Skip next arg
-      }
-    } else if (arg.startsWith('--file=')) {
-      params.dockerfilePath = arg.split('=')[1];
-      console.log(`📄 Dockerfile: ${params.dockerfilePath}`);
-    }
-  }
-  
-  try {
-    await helper.callTool('docker-build', params);
-  } catch (error) {
-    console.error('💥 Failed to build image:', error.message);
-    process.exit(1);
-  }
-}
+// Get the alias name from the script filename
+const aliasName = path.basename(__filename, '.js');
 
-main().catch(console.error);
+// Path to the main CLI (adjust path based on location)
+const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+
+// Forward all arguments to the main CLI with the alias name
+const args = [cliPath, aliasName, ...process.argv.slice(2)];
+
+const child = spawn('node', args, {
+  stdio: 'inherit',
+  cwd: process.cwd()
+});
+
+child.on('exit', (code) => {
+  process.exit(code || 0);
+});
