@@ -6,9 +6,9 @@ This guide provides detailed instructions for installing and setting up the Dock
 
 - [Prerequisites](#prerequisites)
 - [Installation Methods](#installation-methods)
-  - [NPM Package Installation](#npm-package-installation-recommended)
-  - [Global Installation from Source](#global-installation-from-source)
-  - [Local Development Installation](#local-development-installation)
+- [NPM Package Installation (Recommended)](#npm-package-installation-recommended)
+- [Global Installation from Source](#global-installation-from-source)
+- [Local Development Installation](#local-development-installation)
 - [Verification](#verification)
 - [Configuration](#configuration)
 - [Updating](#updating)
@@ -44,29 +44,45 @@ docker info
 
 ### NPM Package Installation (Recommended)
 
-Install Docker MCP Server as a global npm package:
+The easiest way to install Docker MCP Server is via npm package:
+
+#### Global Installation via npm
 
 ```bash
-# Install from npm (recommended)
+# Install globally from npm registry
 npm install -g docker-mcp-server
 
-# Alternative: Install using pnpm
-pnpm add -g docker-mcp-server
+# Verify installation
+docker-mcp-server --version
 
-# Alternative: Install using yarn
-yarn global add docker-mcp-server
-
-# Test the installation
-dps --help
+# Test aliases
+dlist --summary
 ```
 
-After global npm installation, all CLI aliases will be available in your PATH:
-- `drun`, `dbuild`, `dimages`, `dps`, etc. (basic commands)
-- `dcompose`, `dnetwork`, `dvolume`, `dprune`, etc. (advanced commands)
+#### Alternative Package Managers
+
+```bash
+# Using pnpm (faster)
+pnpm add -g docker-mcp-server
+
+# Using yarn
+yarn global add docker-mcp-server
+
+# Using bun (fastest)
+bun install -g docker-mcp-server
+```
+
+#### Benefits of NPM Installation
+
+- ✅ **Automatic dependency management**
+- ✅ **Easy updates**: `npm update -g docker-mcp-server`
+- ✅ **Global CLI access**: All aliases available in PATH
+- ✅ **Cross-platform compatibility**
+- ✅ **Simple uninstallation**: `npm uninstall -g docker-mcp-server`
 
 ### Global Installation from Source
 
-This method installs from the source repository:
+If you want to install from source code or contribute to development:
 
 ```bash
 # Clone the repository

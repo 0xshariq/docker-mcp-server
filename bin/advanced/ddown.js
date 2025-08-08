@@ -18,15 +18,21 @@ if (args.includes('--help') || args.includes('-h')) {
     console.log(`\n${helpContent.name} - ${helpContent.description}\n`);
     console.log(`Usage: ${helpContent.usage}\n`);
     
-    console.log('Examples:');
+    console.log('Examples (ddown = docker-compose down shortcut):');
     helpContent.examples.forEach(example => {
-      console.log(`  ${example.command.padEnd(40)} # ${example.description}`);
+      if (example.command.includes('ddown') || example.command.includes('down')) {
+        console.log(`  ${example.command.padEnd(40)} # ${example.description}`);
+      }
     });
     
     console.log('\nOptions:');
     helpContent.options.forEach(option => {
       console.log(`  ${option.flag.padEnd(30)} ${option.description}`);
     });
+    
+    console.log('\nShortcut Information:');
+    console.log('  ddown is equivalent to "dcompose down"');
+    console.log('  Use dup for "docker-compose up"');
     
     if (helpContent.notes) {
       console.log('\nNotes:');

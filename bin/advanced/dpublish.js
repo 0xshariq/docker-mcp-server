@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
   try {
-    const helpFilePath = path.join(__dirname, '..', '..', 'help', 'advanced', 'docker-logout.json');
+    const helpFilePath = path.join(__dirname, '..', '..', 'help', 'advanced', 'docker-publish.json');
     const helpContent = JSON.parse(fs.readFileSync(helpFilePath, 'utf8'));
     
     console.log(`\n${helpContent.name} - ${helpContent.description}\n`);
@@ -20,12 +20,22 @@ if (args.includes('--help') || args.includes('-h')) {
     
     console.log('Examples:');
     helpContent.examples.forEach(example => {
-      console.log(`  ${example.command.padEnd(40)} # ${example.description}`);
+      console.log(`  ${example.command.padEnd(60)} # ${example.description}`);
     });
     
     console.log('\nOptions:');
     helpContent.options.forEach(option => {
-      console.log(`  ${option.flag.padEnd(30)} ${option.description}`);
+      console.log(`  ${option.flag.padEnd(35)} ${option.description}`);
+    });
+    
+    console.log('\nRegistry Examples:');
+    helpContent.registry_examples.forEach(example => {
+      console.log(`  ${example}`);
+    });
+    
+    console.log('\nPublishing Workflow:');
+    helpContent.publishing_workflow.forEach(step => {
+      console.log(`  ${step}`);
     });
     
     if (helpContent.security_features) {
@@ -35,10 +45,10 @@ if (args.includes('--help') || args.includes('-h')) {
       });
     }
     
-    if (helpContent.registry_examples) {
-      console.log('\nRegistry Examples:');
-      helpContent.registry_examples.forEach(example => {
-        console.log(`  ${example}`);
+    if (helpContent.best_practices) {
+      console.log('\nBest Practices:');
+      helpContent.best_practices.forEach(practice => {
+        console.log(`  ${practice}`);
       });
     }
     
@@ -67,9 +77,9 @@ const forwardArgs = [cliPath, aliasName, ...args];
 
 const child = spawn('node', forwardArgs, {
   stdio: 'inherit',
-  shell: process.platform === 'win32'
+  cwd: process.cwd()
 });
 
-child.on('close', (code) => {
-  process.exit(code);
+child.on('exit', (code) => {
+  process.exit(code || 0);
 });

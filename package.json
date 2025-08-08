@@ -25,6 +25,7 @@
     "dprune": "bin/advanced/dprune.js",
     "dlogin": "bin/advanced/dlogin.js",
     "dlogout": "bin/advanced/dlogout.js",
+    "dpublish": "bin/advanced/dpublish.js",
     "dbridge": "bin/advanced/dbridge.js",
     "ddev": "bin/advanced/ddev.js",
     "dclean": "bin/advanced/dclean.js",

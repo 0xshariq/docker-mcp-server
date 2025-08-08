@@ -1,0 +1,67 @@
+{
+  "name": "docker-logout",
+  "aliases": ["dlogout"],
+  "category": "Registry Operations",
+  "description": "Log out from Docker registry securely",
+  "usage": "docker-logout [registry-server]",
+  "examples": [
+    {
+      "command": "dlogout",
+      "description": "Log out from Docker Hub (default registry)"
+    },
+    {
+      "command": "dlogout registry.example.com",
+      "description": "Log out from specific registry server"
+    },
+    {
+      "command": "dlogout --all",
+      "description": "Log out from all configured registries"
+    },
+    {
+      "command": "dlogout --help",
+      "description": "Show this help message"
+    }
+  ],
+  "options": [
+    {
+      "flag": "--all",
+      "description": "Log out from all configured registries"
+    },
+    {
+      "flag": "-v, --verbose",
+      "description": "Show detailed logout information"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "registry_examples": [
+    "Docker Hub (default) - dlogout",
+    "AWS ECR - dlogout 123456789012.dkr.ecr.region.amazonaws.com",
+    "Google GCR - dlogout gcr.io",
+    "Azure ACR - dlogout myregistry.azurecr.io",
+    "Custom Registry - dlogout registry.company.com"
+  ],
+  "security_features": [
+    "🔒 Removes stored authentication credentials",
+    "🧹 Cleans up authentication tokens securely",
+    "📝 Updates Docker configuration file",
+    "🔐 Prevents unauthorized registry access",
+    "⚡ Immediate credential revocation"
+  ],
+  "use_cases": [
+    "🔄 Switching between different registry accounts",
+    "🔒 Security compliance and access control",
+    "🧪 CI/CD pipeline credential management",
+    "👥 Shared workstation credential cleanup",
+    "🚪 Session termination for security"
+  ],
+  "notes": [
+    "💡 Logout removes credentials from Docker config file",
+    "🔧 Use with dlogin for registry authentication workflows",
+    "📊 Supports multiple registries simultaneously", 
+    "⚡ Immediate effect - no restart required",
+    "🎯 Part of secure Docker registry management"
+  ]
+}

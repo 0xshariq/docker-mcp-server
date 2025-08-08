@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
 import { spawn } from 'child_process';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-
+import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,7 +16,6 @@ const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
 
 const helpArgs = ['--help', '-h'];
 if (process.argv.slice(2).some(arg => helpArgs.includes(arg))) {
-  
   const helpPath = path.join(__dirname, '..', '..', 'help', 'basic', 'docker-containers.json');
   if (fs.existsSync(helpPath)) {
     const helpContent = JSON.parse(fs.readFileSync(helpPath, 'utf8'));

@@ -1,6 +1,6 @@
 # Docker MCP Server
 
-A comprehensive Model Context Protocol (MCP) server that provides advanced Docker operations through a unified interface. This server combines 16 powerful Docker MCP tools with 24+ convenient CLI aliases to create a complete Docker workflow solution for developers, DevOps engineers, and system administrators.
+A comprehensive Model Context Protocol (MCP) server that provides advanced Docker operations through a unified interface. This server combines 16 powerful Docker MCP tools with 25+ convenient CLI aliases to create a complete Docker workflow solution for developers, DevOps engineers, and system administrators.
 
 ## 🌟 What Makes Docker MCP Server Special
 
@@ -8,15 +8,17 @@ Docker MCP Server is not just another Docker wrapper - it's a complete Docker wo
 
 ### 🎯 **Unified Interface**
 - **MCP Protocol Integration**: Seamlessly works with MCP-compatible tools and IDEs
-- **CLI Convenience**: 24+ carefully crafted aliases for common Docker workflows
+- **CLI Convenience**: 25+ carefully crafted aliases for common Docker workflows
 - **Consistent API**: All operations follow the same patterns and conventions
 - **Cross-Platform**: Full support for Linux, macOS, and Windows environments
 
 ### 🔒 **Security-First Design**
-- **Secure Authentication**: Enhanced docker login with username-only CLI parameters
-- **No Password Exposure**: Credentials never appear in command history or process lists
-- **Registry Flexibility**: Support for Docker Hub, AWS ECR, Azure ACR, Google GCR, and custom registries
-- **Permission Management**: Proper handling of Docker daemon permissions
+- **Docker-Managed Security**: All password operations handled by Docker daemon for maximum security
+- **Zero Password Exposure**: Passwords never appear in command history, process lists, or arguments
+- **Token Authentication Support**: Full support for Personal Access Tokens and service accounts
+- **Registry Flexibility**: Secure login to Docker Hub, AWS ECR, Azure ACR, Google GCR, and custom registries
+- **CI/CD Security**: Secure stdin password input for automated deployment pipelines
+- **Permission Management**: Proper handling of Docker daemon permissions and credential storage
 
 ### 🚀 **Developer Experience**
 - **Comprehensive Help System**: Every command includes detailed documentation with `--help`
@@ -25,7 +27,9 @@ Docker MCP Server is not just another Docker wrapper - it's a complete Docker wo
 - **Rich Output**: Formatted, colored output with clear status indicators
 
 ### 📊 **Advanced Operations**
+- **Complete Container Lifecycle**: From build to publish with comprehensive registry support
 - **Multi-Container Management**: Docker Compose integration with service orchestration
+- **Registry Publishing**: Advanced image publishing with multi-platform support and automated workflows
 - **Network & Volume Management**: Advanced networking and storage operations
 - **System Maintenance**: Intelligent cleanup tools with multiple safety levels
 - **Development Workflows**: Specialized commands for development environments
@@ -167,7 +171,7 @@ npm run build
 # Install globally to enable CLI aliases everywhere
 npm install -g .
 
-# 💡 After global installation, all 24 CLI aliases work from any directory!
+# 💡 After global installation, all 25 CLI aliases work from any directory!
 ```
 
 For detailed installation instructions including troubleshooting, see the [Installation Guide](docs/installation-guide.md).
@@ -250,6 +254,31 @@ npm run start
 npm run inspect
 ```
 
+### Universal Startup Script
+For MCP client integration, use the universal startup script that handles environment setup automatically:
+
+```bash
+# Universal startup script (recommended for MCP clients)
+./start-mcp.sh                  # Start with automatic environment setup
+./start-mcp.sh --verbose        # Start with verbose logging
+./start-mcp.sh --dev            # Start in development mode
+./start-mcp.sh --help           # Show all options
+
+# Compatible with all MCP clients:
+# - Claude Desktop (Anthropic)
+# - Cursor IDE 
+# - Continue (VS Code Extension)
+# - Open WebUI
+# - Any MCP-compatible client
+```
+
+The startup script automatically:
+- ✅ Sets up Node.js environment with fnm
+- ✅ Validates Docker daemon connectivity  
+- ✅ Builds the project if needed
+- ✅ Handles environment variables
+- ✅ Provides detailed logging
+
 ### CLI Wrapper
 Use the comprehensive CLI wrapper for quick Docker operations:
 
@@ -313,11 +342,16 @@ docker-mcp-server/
 │       ├── dinspect.js
 │       ├── dprune.js
 │       ├── dlogin.js
+│       ├── dpublish.js   # NEW: Image publishing to registries
 │       ├── ddev.js
 │       ├── dclean.js
 │       ├── dstop.js
 │       └── dreset.js
+├── help/                 # JSON help files for all commands
+│   ├── basic/
+│   └── advanced/
 ├── docker-cli.js         # Main CLI wrapper
+├── start-mcp.sh          # Universal MCP server startup script
 ├── dist/                 # Compiled TypeScript output
 ├── package.json
 ├── tsconfig.json
@@ -347,7 +381,7 @@ docker-mcp-server/
 ## 📋 CLI Aliases
 
 ### Available Aliases
-The package provides 24 CLI aliases organized into basic and advanced operations:
+The package provides 25 CLI aliases organized into basic and advanced operations:
 
 | Alias | Command | Description |
 |-------|---------|-------------|
@@ -362,7 +396,7 @@ The package provides 24 CLI aliases organized into basic and advanced operations
 | `dlogs` | bin/basic/dlogs.js | View container logs |
 | `dexec` | bin/basic/dexec.js | Execute commands in containers |
 | `dbuild` | bin/basic/dbuild.js | Build Docker images |
-| **Advanced Operations (13)** | | |
+| **Advanced Operations (14)** | | |
 | `dcompose` | bin/advanced/dcompose.js | Docker Compose operations |
 | `dup` | bin/advanced/dup.js | Quick compose up |
 | `ddown` | bin/advanced/ddown.js | Quick compose down |
@@ -370,8 +404,9 @@ The package provides 24 CLI aliases organized into basic and advanced operations
 | `dvolume` | bin/advanced/dvolume.js | Volume management |
 | `dinspect` | bin/advanced/dinspect.js | Inspect Docker objects |
 | `dprune` | bin/advanced/dprune.js | System cleanup operations |
-| `dlogin` | bin/advanced/dlogin.js | Registry login (simplified) |
+| `dlogin` | bin/advanced/dlogin.js | Secure registry login |
 | `dlogout` | bin/advanced/dlogout.js | Registry logout |
+| `dpublish` | bin/advanced/dpublish.js | Publish images to registries |
 | `dbridge` | bin/advanced/dbridge.js | Bridge network management |
 | `ddev` | bin/advanced/ddev.js | Development workflows |
 | `dclean` | bin/advanced/dclean.js | Comprehensive system cleanup |

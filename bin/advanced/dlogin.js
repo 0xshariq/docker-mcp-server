@@ -28,10 +28,35 @@ if (args.includes('--help') || args.includes('-h')) {
       console.log(`  ${option.flag.padEnd(30)} ${option.description}`);
     });
     
-    if (helpContent.security_notes) {
-      console.log('\nSecurity Notes:');
-      helpContent.security_notes.forEach(note => {
-        console.log(`  ${note}`);
+    if (helpContent.registries) {
+      console.log('\nSupported Registries:');
+      helpContent.registries.forEach(registry => {
+        console.log(`  ${registry.name.padEnd(30)} ${registry.url}`);
+        console.log(`  ${' '.repeat(30)} Example: ${registry.example}`);
+        console.log(`  ${' '.repeat(30)} Auth: ${registry.auth}`);
+        console.log();
+      });
+    }
+    
+    if (helpContent.security) {
+      console.log('\n🔒 Security Features:');
+      helpContent.security.forEach(feature => {
+        console.log(`  ${feature}`);
+      });
+    }
+    
+    if (helpContent.security_best_practices) {
+      console.log('\n🛡️  Security Best Practices:');
+      helpContent.security_best_practices.forEach(practice => {
+        console.log(`  ${practice}`);
+      });
+    }
+    
+    if (helpContent.troubleshooting) {
+      console.log('\n🔧 Troubleshooting:');
+      helpContent.troubleshooting.forEach(item => {
+        console.log(`  Issue: ${item.issue}`);
+        console.log(`  Solution: ${item.solution}\n`);
       });
     }
     

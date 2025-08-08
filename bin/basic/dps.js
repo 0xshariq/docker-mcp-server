@@ -14,9 +14,9 @@ const aliasName = path.basename(__filename, '.js');
 // Path to the main CLI (adjust path based on location)
 const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
 
+
 const helpArgs = ['--help', '-h'];
 if (process.argv.slice(2).some(arg => helpArgs.includes(arg))) {
-  // Show help for this alias
   const helpPath = path.join(__dirname, '..', '..', 'help', 'basic', 'docker-containers.json');
   if (fs.existsSync(helpPath)) {
     const helpContent = JSON.parse(fs.readFileSync(helpPath, 'utf8'));

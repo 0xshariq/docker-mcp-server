@@ -4,7 +4,7 @@ This directory contains advanced Docker operation aliases for complex workflows,
 
 ## Overview
 
-Advanced operations provide sophisticated Docker functionality including multi-service orchestration, network management, volume operations, system cleanup, and specialized workflows for development and production environments.
+Advanced operations provide sophisticated Docker functionality including multi-service orchestration, network management, volume operations, registry publishing, system cleanup, and specialized workflows for development and production environments. The 14 advanced aliases cover the complete container lifecycle from build to publish.
 
 ## Available Aliases
 
@@ -216,22 +216,42 @@ dprune --filter "until=24h"     # Remove objects older than 24h
 
 ### 🔐 `dlogin` - Docker Registry Login
 
-**Command:** `dlogin [options]`
+**Command:** `dlogin [registry] [options]`
 
-Simplified login to Docker registries with username-only authentication.
+Securely log in to Docker registries with Docker-handled password authentication for maximum security.
 
 **Options:**
-- `--username <username>` - Registry username
-- `--registry <registry>` - Registry URL (default: Docker Hub)
-- `--token <token>` - Use token authentication
+- `-u, --username <username>` - Username for registry authentication
+- `--token <token>` - Authentication token (for GitHub, GitLab, etc.)
+- `--password-stdin` - Read password from stdin (secure for automation)
+- `--status` - Show current login status for all registries
+- `-i, --interactive` - Force interactive password prompt
+- `--logout` - Logout from specified registry
 
 **Examples:**
 ```bash
-dlogin                          # Show login status
-dlogin --username myuser        # Login to Docker Hub
-dlogin --registry ghcr.io --username myuser  # GitHub Container Registry
-dlogin --token $TOKEN           # Token authentication
+dlogin                                              # Check login status for all registries
+dlogin --status                                     # Show detailed login status
+dlogin --username myuser                            # Login to Docker Hub (secure prompt)
+dlogin ghcr.io --username myuser                    # Login to GitHub Container Registry
+dlogin --token ghp_xxxxxxxxxxxx ghcr.io             # Login using GitHub Personal Access Token
+dlogin --password-stdin < password.txt              # Secure automation login
 ```
+
+**Security Features:**
+- 🔐 **SECURE PASSWORD HANDLING**: Passwords never passed as command arguments
+- 🛡️ **DOCKER DAEMON SECURITY**: Docker handles all password operations
+- 🔑 **CREDENTIAL STORAGE**: Secure storage in Docker's keychain/config
+- 🚫 **NO COMMAND HISTORY**: Passwords never appear in shell history
+- 🔒 **STDIN OPTION**: Secure automation with --password-stdin
+
+**Supported Registries:**
+- **Docker Hub**: `docker.io` (default) - Username/Password or PAT
+- **GitHub Container Registry**: `ghcr.io` - GitHub username with Personal Access Token
+- **Google Container Registry**: `gcr.io` - Service account key authentication
+- **Amazon ECR**: Use AWS CLI integration for secure authentication
+- **Azure Container Registry**: Azure AD or admin credentials
+- **Custom Registries**: Any Docker-compliant registry
 
 **MCP Tool:** `docker-login`
 
@@ -255,6 +275,84 @@ dlogout --all                   # Logout from all registries
 ```
 
 **MCP Tool:** `docker-logout`
+
+---
+
+### 📤 `dpublish` - Docker Image Publishing
+
+**Command:** `dpublish <image> [options]`
+
+Advanced Docker image publishing to registries with comprehensive features for development and production workflows.
+
+**Core Options:**
+- `-t, --tag <tag>` - Additional tags for the image
+- `--registry <registry>` - Target registry (default: Docker Hub)
+- `--platform <platforms>` - Target platforms (e.g., linux/amd64,linux/arm64)
+- `--push` - Push immediately after tagging
+- `--latest` - Also tag as 'latest'
+
+**Build Integration:**
+- `--build` - Build image before publishing
+- `--build-context <path>` - Build context path (default: current directory)
+- `--dockerfile <file>` - Dockerfile path
+- `--build-arg <key=value>` - Build-time arguments
+- `--target <stage>` - Target build stage in multi-stage Dockerfile
+
+**Security & Authentication:**
+- `--check-auth` - Verify registry authentication before publishing
+- `--sign` - Sign images using Docker Content Trust
+- `--provenance` - Include build provenance attestations
+
+**Advanced Features:**
+- `--multi-arch` - Build and push multi-architecture images
+- `--cache-from <image>` - Use image as cache source
+- `--cache-to <dest>` - Export cache to destination
+- `--annotation <key=value>` - Add OCI annotations
+- `--compress` - Compress image layers during push
+
+**Examples:**
+```bash
+# Basic publishing
+dpublish myapp:v1.0.0                                    # Publish to Docker Hub
+dpublish myapp:v1.0.0 --registry ghcr.io --push         # Publish to GitHub Container Registry
+
+# Multi-platform publishing
+dpublish myapp:v1.0.0 --platform linux/amd64,linux/arm64 --push
+
+# Build and publish workflow
+dpublish myapp:v1.0.0 --build --dockerfile Dockerfile.prod --push --latest
+
+# Advanced publishing with security
+dpublish myapp:v1.0.0 --sign --provenance --check-auth --push
+
+# Registry-specific examples
+dpublish myapp:v1.0.0 --registry myregistry.azurecr.io --push
+dpublish myapp:v1.0.0 --registry 123456789.dkr.ecr.us-west-2.amazonaws.com --push
+```
+
+**Registry Support:**
+- **Docker Hub**: `docker.io` (default)
+- **GitHub Container Registry**: `ghcr.io`
+- **Google Container Registry**: `gcr.io`, `us.gcr.io`, `eu.gcr.io`, `asia.gcr.io`
+- **Amazon ECR**: `*.dkr.ecr.*.amazonaws.com`
+- **Azure Container Registry**: `*.azurecr.io`
+- **Custom Registries**: Any compliant Docker registry
+
+**Security Features:**
+- 🔐 Authentication verification before publishing
+- 🛡️ Image signing with Docker Content Trust
+- 📝 Build provenance and attestations
+- 🔍 Vulnerability scanning integration
+- 🚀 Secure multi-platform builds
+
+**Workflow Integration:**
+- ✅ CI/CD pipeline ready
+- ✅ Multi-stage build support  
+- ✅ Cache optimization
+- ✅ Automated tagging strategies
+- ✅ Registry-specific optimizations
+
+**MCP Tool:** `docker-publish`
 
 ---
 

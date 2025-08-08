@@ -2,32 +2,44 @@
   "name": "docker-login",
   "aliases": ["dlogin"],
   "category": "Advanced Registry Operations",
-  "description": "Log in to a Docker registry (Docker will prompt for password securely)",
+  "description": "Securely log in to a Docker registry with Docker-handled password authentication",
   "usage": "docker-login [registry] [options]",
   "examples": [
     {
       "command": "dlogin",
-      "description": "Check current login status"
+      "description": "Check current login status for all registries"
+    },
+    {
+      "command": "dlogin --status",
+      "description": "Show detailed login status information"
     },
     {
       "command": "dlogin --username myuser",
-      "description": "Login to Docker Hub as myuser"
+      "description": "Login to Docker Hub (Docker prompts for password securely)"
     },
     {
       "command": "dlogin -u myuser",
-      "description": "Login to Docker Hub as myuser (short flag)"
+      "description": "Login to Docker Hub using short flag"
     },
     {
       "command": "dlogin ghcr.io --username myuser",
       "description": "Login to GitHub Container Registry"
     },
     {
-      "command": "dlogin --token <token>",
-      "description": "Login using token authentication (for CI/CD)"
+      "command": "dlogin registry.company.com --username employee",
+      "description": "Login to private company registry"
+    },
+    {
+      "command": "dlogin --token ghp_xxxxxxxxxxxx ghcr.io",
+      "description": "Login using GitHub Personal Access Token"
+    },
+    {
+      "command": "dlogin --password-stdin < password.txt",
+      "description": "Login using password from stdin (for automation)"
     },
     {
       "command": "dlogin --help",
-      "description": "Show this help message"
+      "description": "Show this comprehensive help message"
     }
   ],
   "options": [
@@ -37,49 +49,102 @@
     },
     {
       "flag": "--token <token>",
-      "description": "Authentication token (alternative to username/password)"
+      "description": "Authentication token (for GitHub, GitLab, etc.)"
+    },
+    {
+      "flag": "--password-stdin",
+      "description": "Read password from stdin (secure for automation)"
+    },
+    {
+      "flag": "--status",
+      "description": "Show current login status for all registries"
     },
     {
       "flag": "-i, --interactive",
-      "description": "Force interactive mode"
+      "description": "Force interactive password prompt"
+    },
+    {
+      "flag": "--logout",
+      "description": "Logout from specified registry (or all if none specified)"
     },
     {
       "flag": "-h, --help",
-      "description": "Show this help message"
+      "description": "Show this comprehensive help message"
     }
   ],
   "registries": [
     {
       "name": "Docker Hub",
       "url": "docker.io (default)",
-      "example": "dlogin --username myuser"
+      "example": "dlogin --username myuser",
+      "auth": "Username/Password or Personal Access Token"
     },
     {
       "name": "GitHub Container Registry",
       "url": "ghcr.io",
-      "example": "dlogin ghcr.io --username myuser"
+      "example": "dlogin ghcr.io --username myuser",
+      "auth": "GitHub username with Personal Access Token"
     },
     {
       "name": "Google Container Registry",
       "url": "gcr.io",
-      "example": "dlogin gcr.io --username _json_key"
+      "example": "dlogin gcr.io --username _json_key",
+      "auth": "Service account key as password"
     },
     {
       "name": "Amazon ECR",
       "url": "*.dkr.ecr.*.amazonaws.com",
-      "example": "Use AWS CLI: aws ecr get-login-password"
+      "example": "aws ecr get-login-password | dlogin --password-stdin 123456789012.dkr.ecr.us-east-1.amazonaws.com",
+      "auth": "AWS CLI authentication required"
+    },
+    {
+      "name": "Azure Container Registry",
+      "url": "*.azurecr.io",
+      "example": "dlogin myregistry.azurecr.io --username myregistry",
+      "auth": "Azure AD or admin credentials"
     }
   ],
   "security": [
-    "🔐 Password is NEVER stored in command history",
-    "🛡️  Docker prompts for password interactively",
-    "🔑 Credentials are stored securely in Docker config",
-    "💡 Use tokens for CI/CD environments"
+    "🔐 **SECURE PASSWORD HANDLING**: Password is NEVER passed as command argument",
+    "🛡️  **DOCKER DAEMON SECURITY**: Docker prompts for password interactively and handles storage",
+    "🔑 **CREDENTIAL STORAGE**: Login credentials stored securely in Docker's keychain/config",
+    "💡 **TOKEN AUTHENTICATION**: Use tokens for CI/CD and automated environments",
+    "🚫 **NO COMMAND HISTORY**: Passwords never appear in shell history or process lists",
+    "🔒 **STDIN OPTION**: Use --password-stdin for secure automation scripts"
+  ],
+  "security_best_practices": [
+    "✅ Always use interactive password prompts for manual login",
+    "✅ Use Personal Access Tokens for GitHub/GitLab registries",
+    "✅ Use --password-stdin for automation to avoid command line exposure",
+    "✅ Regularly rotate passwords and tokens",
+    "❌ Never pass passwords as command line arguments",
+    "❌ Never store passwords in plain text files",
+    "❌ Never use passwords in CI/CD environment variables"
   ],
   "notes": [
-    "💡 Run without arguments to check login status",
-    "🔐 Docker will securely prompt for your password - never pass it as argument",
-    "🔧 Login persists until you run 'docker logout'",
-    "⚡ Required for pushing/pulling private images"
+    "💡 **Status Check**: Run without arguments to check current login status",
+    "🔐 **Secure by Design**: Docker daemon handles all password operations securely",
+    "🔧 **Persistent Login**: Login persists until 'docker logout' or credential expiry",
+    "⚡ **Required for Private**: Authentication required for pushing/pulling private images",
+    "🚀 **CI/CD Ready**: Use --password-stdin for automated deployment pipelines",
+    "� **Multiple Registries**: Can be logged into multiple registries simultaneously"
+  ],
+  "troubleshooting": [
+    {
+      "issue": "Login fails with 'unauthorized'",
+      "solution": "Verify username and password/token are correct"
+    },
+    {
+      "issue": "Token authentication not working",
+      "solution": "Ensure token has correct permissions (read:packages, write:packages)"
+    },
+    {
+      "issue": "ECR login issues",
+      "solution": "Use AWS CLI: aws ecr get-login-password --region region | docker login --username AWS --password-stdin uri"
+    },
+    {
+      "issue": "Cannot push after login",
+      "solution": "Check if repository exists and you have push permissions"
+    }
   ]
 }
