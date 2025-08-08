@@ -42,16 +42,16 @@ Install Docker MCP Server as a global npm package for system-wide access:
 
 ```bash
 # Install globally via npm
-npm install -g docker-mcp-server
+npm install -g @0xshariq/docker-mcp-server
 
 # Install globally via pnpm (faster)
-pnpm add -g docker-mcp-server
+pnpm add -g @0xshariq/docker-mcp-server
 
 # Install globally via yarn
-yarn global add docker-mcp-server
+yarn global add @0xshariq/docker-mcp-server
 
 # Verify installation
-docker-mcp-server --version
+@0xshariq/docker-mcp-server --version
 ```
 
 After global installation, all CLI aliases will be available in your PATH:
