@@ -181,9 +181,45 @@ export async function dockerImages(params: any): Promise<DockerOperationResult> 
       return createResponse('docker-images', 'Error: Docker daemon is not running. Please start Docker first.', true, process.cwd(), startTime);
     }
 
-    let command = "docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'";
-    if (params?.filter) {
-      command += ` --filter "reference=${params.filter}"`;
+    let command = 'docker images';
+    
+    // Show all images (including intermediate)
+    if (params?.all || params?.a) {
+      command += ' -a';
+    }
+    
+    // Show digests
+    if (params?.digests) {
+      command += ' --digests';
+    }
+    
+    // Filters
+    if (params?.filter || params?.f) {
+      const filters = params.filter || params.f;
+      if (Array.isArray(filters)) {
+        filters.forEach(filter => command += ` --filter "${filter}"`);
+      } else if (params?.filter && typeof params.filter === 'string') {
+        command += ` --filter "reference=${params.filter}"`;
+      } else {
+        command += ` --filter "${filters}"`;
+      }
+    }
+    
+    // Format output
+    if (params?.format) {
+      command += ` --format "${params.format}"`;
+    } else {
+      command += " --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'";
+    }
+    
+    // No truncate
+    if (params?.noTrunc) {
+      command += ' --no-trunc';
+    }
+    
+    // Quiet mode (only IDs)
+    if (params?.quiet || params?.q) {
+      command += ' -q';
     }
     
     const result = await executeDockerCommand(command);
@@ -213,20 +249,62 @@ export async function dockerContainers(params: any): Promise<DockerOperationResu
       return createResponse('docker-containers', 'Error: Docker daemon is not running. Please start Docker first.', true, process.cwd(), startTime);
     }
 
-    let command = "docker ps --format 'table {{.ID}}\t{{.Image}}\t{{.Command}}\t{{.CreatedAt}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}'";
+    let command = 'docker ps';
     
-    if (params?.all) {
-      command += " -a";
+    // Show all containers (including stopped)
+    if (params?.all || params?.a) {
+      command += ' -a';
     }
     
-    if (params?.filter) {
-      command += ` --filter "name=${params.filter}"`;
+    // Filters
+    if (params?.filter || params?.f) {
+      const filters = params.filter || params.f;
+      if (Array.isArray(filters)) {
+        filters.forEach(filter => command += ` --filter "${filter}"`);
+      } else if (typeof filters === 'string' && !filters.includes('=')) {
+        // Legacy support for name filter
+        command += ` --filter "name=${filters}"`;
+      } else {
+        command += ` --filter "${filters}"`;
+      }
+    }
+    
+    // Format output
+    if (params?.format) {
+      command += ` --format "${params.format}"`;
+    } else {
+      command += " --format 'table {{.ID}}\t{{.Image}}\t{{.Command}}\t{{.CreatedAt}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}'";
+    }
+    
+    // Last n containers
+    if (params?.last || params?.n) {
+      command += ` -n ${params.last || params.n}`;
+    }
+    
+    // Latest created container
+    if (params?.latest || params?.l) {
+      command += ' -l';
+    }
+    
+    // No truncate
+    if (params?.noTrunc) {
+      command += ' --no-trunc';
+    }
+    
+    // Quiet mode (only IDs)
+    if (params?.quiet || params?.q) {
+      command += ' -q';
+    }
+    
+    // Show sizes
+    if (params?.size || params?.s) {
+      command += ' -s';
     }
     
     const result = await executeDockerCommand(command);
     
     if (!result.stdout.trim()) {
-      const status = params?.all ? 'No Docker containers found.' : 'No running Docker containers found.';
+      const status = params?.all || params?.a ? 'No Docker containers found.' : 'No running Docker containers found.';
       return createResponse('docker-containers', `🐳 ${status}`, false, process.cwd(), startTime);
     }
     
@@ -255,7 +333,30 @@ export async function dockerPullImage(params: any): Promise<DockerOperationResul
       return createResponse('docker-pull', 'Error: Image name is required.', true, process.cwd(), startTime);
     }
 
-    const command = `docker pull "${params.imageName}"`;
+    let command = 'docker pull';
+    
+    // All tags option
+    if (params.allTags || params.a) {
+      command += ' -a';
+    }
+    
+    // Disable content trust
+    if (params.disableContentTrust) {
+      command += ' --disable-content-trust';
+    }
+    
+    // Platform option
+    if (params.platform) {
+      command += ` --platform ${params.platform}`;
+    }
+    
+    // Quiet mode
+    if (params.quiet || params.q) {
+      command += ' -q';
+    }
+    
+    command += ` "${params.imageName}"`;
+    
     const result = await executeDockerCommand(command, 300000); // 5 minutes timeout for pulls
     
     const message = `✅ Successfully pulled image: ${params.imageName}\n\n${result.stdout}`;
@@ -267,8 +368,8 @@ export async function dockerPullImage(params: any): Promise<DockerOperationResul
 }
 
 /**
- * Runs a Docker container with specified options
- * @param params - Parameters including image name and options
+ * Runs a Docker container with comprehensive options and modes
+ * @param params - Parameters including image name and all docker run options
  * @returns DockerOperationResult with container run status
  */
 export async function dockerRunContainer(params: any): Promise<DockerOperationResult> {
@@ -285,7 +386,308 @@ export async function dockerRunContainer(params: any): Promise<DockerOperationRe
 
     let command = 'docker run';
     
-    // Add options
+    // Interactive and TTY options
+    if (params.interactive || params.it) {
+      command += ' -it';
+    } else {
+      if (params.i) command += ' -i';
+      if (params.t || params.tty) command += ' -t';
+    }
+    
+    // Detached mode
+    if (params.detach || params.d) {
+      command += ' -d';
+    }
+    
+    // Remove container after exit
+    if (params.rm || params.remove) {
+      command += ' --rm';
+    }
+    
+    // Init process
+    if (params.init) {
+      command += ' --init';
+    }
+    
+    // Port mappings
+    if (params.ports || params.p || params.publish) {
+      const ports = params.ports || params.p || params.publish;
+      if (Array.isArray(ports)) {
+        ports.forEach(port => command += ` -p ${port}`);
+      } else {
+        command += ` -p ${ports}`;
+      }
+    }
+    
+    // Publish all ports
+    if (params.P || params.publishAll) {
+      command += ' -P';
+    }
+    
+    // Volume mounts
+    if (params.volumes || params.v || params.volume) {
+      const volumes = params.volumes || params.v || params.volume;
+      if (Array.isArray(volumes)) {
+        volumes.forEach(volume => command += ` -v "${volume}"`);
+      } else {
+        command += ` -v "${volumes}"`;
+      }
+    }
+    
+    // Mount options (advanced volume mounts)
+    if (params.mount) {
+      if (Array.isArray(params.mount)) {
+        params.mount.forEach((mount: string) => command += ` --mount ${mount}`);
+      } else {
+        command += ` --mount ${params.mount}`;
+      }
+    }
+    
+    // Tmpfs mounts
+    if (params.tmpfs) {
+      if (Array.isArray(params.tmpfs)) {
+        params.tmpfs.forEach((tmpfs: string) => command += ` --tmpfs ${tmpfs}`);
+      } else {
+        command += ` --tmpfs ${params.tmpfs}`;
+      }
+    }
+    
+    // Environment variables
+    if (params.env || params.e || params.environment) {
+      const envVars = params.env || params.e || params.environment;
+      if (Array.isArray(envVars)) {
+        envVars.forEach(env => command += ` -e ${env}`);
+      } else if (typeof envVars === 'object') {
+        Object.entries(envVars).forEach(([key, value]) => {
+          command += ` -e "${key}=${value}"`;
+        });
+      } else {
+        command += ` -e ${envVars}`;
+      }
+    }
+    
+    // Environment file
+    if (params.envFile || params.envfile) {
+      const envFile = params.envFile || params.envfile;
+      if (Array.isArray(envFile)) {
+        envFile.forEach(file => command += ` --env-file ${file}`);
+      } else {
+        command += ` --env-file ${envFile}`;
+      }
+    }
+    
+    // Container name
+    if (params.name) {
+      command += ` --name ${params.name}`;
+    }
+    
+    // Working directory
+    if (params.workdir || params.w) {
+      command += ` -w "${params.workdir || params.w}"`;
+    }
+    
+    // Network settings
+    if (params.network) {
+      command += ` --network ${params.network}`;
+    }
+    
+    if (params.networkAlias) {
+      if (Array.isArray(params.networkAlias)) {
+        params.networkAlias.forEach((alias: string) => command += ` --network-alias ${alias}`);
+      } else {
+        command += ` --network-alias ${params.networkAlias}`;
+      }
+    }
+    
+    // DNS settings
+    if (params.dns) {
+      if (Array.isArray(params.dns)) {
+        params.dns.forEach((dns: string) => command += ` --dns ${dns}`);
+      } else {
+        command += ` --dns ${params.dns}`;
+      }
+    }
+    
+    if (params.dnsSearch) {
+      if (Array.isArray(params.dnsSearch)) {
+        params.dnsSearch.forEach((search: string) => command += ` --dns-search ${search}`);
+      } else {
+        command += ` --dns-search ${params.dnsSearch}`;
+      }
+    }
+    
+    if (params.hostname) {
+      command += ` --hostname ${params.hostname}`;
+    }
+    
+    // Restart policy
+    if (params.restart) {
+      command += ` --restart ${params.restart}`;
+    }
+    
+    // Resource limits
+    if (params.memory || params.m) {
+      command += ` -m ${params.memory || params.m}`;
+    }
+    
+    if (params.memorySwap) {
+      command += ` --memory-swap ${params.memorySwap}`;
+    }
+    
+    if (params.memoryReservation) {
+      command += ` --memory-reservation ${params.memoryReservation}`;
+    }
+    
+    if (params.oomKillDisable) {
+      command += ' --oom-kill-disable';
+    }
+    
+    if (params.cpus) {
+      command += ` --cpus ${params.cpus}`;
+    }
+    
+    if (params.cpuShares) {
+      command += ` --cpu-shares ${params.cpuShares}`;
+    }
+    
+    if (params.cpuPeriod) {
+      command += ` --cpu-period ${params.cpuPeriod}`;
+    }
+    
+    if (params.cpuQuota) {
+      command += ` --cpu-quota ${params.cpuQuota}`;
+    }
+    
+    if (params.cpusetCpus) {
+      command += ` --cpuset-cpus ${params.cpusetCpus}`;
+    }
+    
+    if (params.cpusetMems) {
+      command += ` --cpuset-mems ${params.cpusetMems}`;
+    }
+    
+    if (params.pidsLimit) {
+      command += ` --pids-limit ${params.pidsLimit}`;
+    }
+    
+    // User and group settings
+    if (params.user || params.u) {
+      command += ` -u ${params.user || params.u}`;
+    }
+    
+    if (params.groupAdd) {
+      if (Array.isArray(params.groupAdd)) {
+        params.groupAdd.forEach((group: string) => command += ` --group-add ${group}`);
+      } else {
+        command += ` --group-add ${params.groupAdd}`;
+      }
+    }
+    
+    // Security options
+    if (params.privileged) {
+      command += ' --privileged';
+    }
+    
+    if (params.readOnly) {
+      command += ' --read-only';
+    }
+    
+    if (params.capAdd) {
+      if (Array.isArray(params.capAdd)) {
+        params.capAdd.forEach((cap: string) => command += ` --cap-add ${cap}`);
+      } else {
+        command += ` --cap-add ${params.capAdd}`;
+      }
+    }
+    
+    if (params.capDrop) {
+      if (Array.isArray(params.capDrop)) {
+        params.capDrop.forEach((cap: string) => command += ` --cap-drop ${cap}`);
+      } else {
+        command += ` --cap-drop ${params.capDrop}`;
+      }
+    }
+    
+    if (params.securityOpt) {
+      if (Array.isArray(params.securityOpt)) {
+        params.securityOpt.forEach((opt: string) => command += ` --security-opt ${opt}`);
+      } else {
+        command += ` --security-opt ${params.securityOpt}`;
+      }
+    }
+    
+    // Logging options
+    if (params.logDriver) {
+      command += ` --log-driver ${params.logDriver}`;
+    }
+    
+    if (params.logOpt) {
+      if (Array.isArray(params.logOpt)) {
+        params.logOpt.forEach((opt: string) => command += ` --log-opt ${opt}`);
+      } else {
+        command += ` --log-opt ${params.logOpt}`;
+      }
+    }
+    
+    // Labels
+    if (params.label) {
+      if (Array.isArray(params.label)) {
+        params.label.forEach((label: string) => command += ` --label ${label}`);
+      } else {
+        command += ` --label ${params.label}`;
+      }
+    }
+    
+    if (params.labelFile) {
+      if (Array.isArray(params.labelFile)) {
+        params.labelFile.forEach((file: string) => command += ` --label-file ${file}`);
+      } else {
+        command += ` --label-file ${params.labelFile}`;
+      }
+    }
+    
+    // Platform
+    if (params.platform) {
+      command += ` --platform ${params.platform}`;
+    }
+    
+    // Entrypoint
+    if (params.entrypoint) {
+      command += ` --entrypoint "${params.entrypoint}"`;
+    }
+    
+    // Ulimit
+    if (params.ulimit) {
+      if (Array.isArray(params.ulimit)) {
+        params.ulimit.forEach((limit: string) => command += ` --ulimit ${limit}`);
+      } else {
+        command += ` --ulimit ${params.ulimit}`;
+      }
+    }
+    
+    // Device mappings
+    if (params.device) {
+      if (Array.isArray(params.device)) {
+        params.device.forEach((device: string) => command += ` --device ${device}`);
+      } else {
+        command += ` --device ${params.device}`;
+      }
+    }
+    
+    // Additional options
+    if (params.cidFile) {
+      command += ` --cidfile ${params.cidFile}`;
+    }
+    
+    if (params.detachKeys) {
+      command += ` --detach-keys ${params.detachKeys}`;
+    }
+    
+    if (params.rm === false) {
+      // Explicitly don't add --rm if rm is false
+    }
+    
+    // Legacy options object support
     if (params.options) {
       if (params.options.detach) {
         command += ' -d';
@@ -320,10 +722,75 @@ export async function dockerRunContainer(params: any): Promise<DockerOperationRe
     
     command += ` "${params.imageName}"`;
     
-    const result = await executeDockerCommand(command);
+    // Add command to run in container
+    if (params.containerCommand || params.cmd) {
+      command += ` ${params.containerCommand || params.cmd}`;
+    }
     
-    const message = `🚀 Successfully started container from image: ${params.imageName}\n\nContainer ID: ${result.stdout.trim()}`;
-    return createResponse('docker-run', message, false, process.cwd(), startTime);
+    // Handle interactive mode differently
+    if (params.interactive || params.it) {
+      const { spawn } = await import('child_process');
+      const proc = spawn('sh', ['-c', command], {
+        stdio: 'inherit'
+      });
+      
+      const exitCode: number = await new Promise((resolve) => {
+        proc.on('close', (code) => resolve(code || 0));
+      });
+      
+      if (exitCode === 0) {
+        const message = `🚀 Interactive container session completed for image: ${params.imageName}`;
+        return createResponse('docker-run', message, false, process.cwd(), startTime);
+      } else {
+        const message = `❌ Interactive container failed for image: ${params.imageName}`;
+        return createResponse('docker-run', message, true, process.cwd(), startTime);
+      }
+    } else {
+      const result = await executeDockerCommand(command);
+      const containerId = result.stdout.trim();
+      
+      // Get container details for better user experience
+      let containerDetails = '';
+      try {
+        const inspectResult = await executeDockerCommand(`docker inspect ${containerId} --format "{{.Name}}\t{{.Config.Image}}\t{{.NetworkSettings.Ports}}\t{{.State.Status}}"`);
+        const [name, image, ports, status] = inspectResult.stdout.trim().split('\t');
+        
+        containerDetails = `
+📋 Container Details:
+   Name: ${name.replace('/', '')}
+   Image: ${image}
+   Status: ${status}
+   ID: ${containerId}`;
+
+        // Parse and display port mappings if any
+        if (ports && ports !== 'map[]' && ports !== '{}') {
+          const portInfo = ports.replace(/map\[|\]/g, '').replace(/:/g, ' → ');
+          if (portInfo.trim()) {
+            containerDetails += `\n   Ports: ${portInfo}`;
+          }
+        }
+        
+        // Show container IP if on custom network
+        const networkResult = await executeDockerCommand(`docker inspect ${containerId} --format "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"`);
+        const ipAddress = networkResult.stdout.trim();
+        if (ipAddress) {
+          containerDetails += `\n   IP: ${ipAddress}`;
+        }
+        
+      } catch (inspectError) {
+        // If inspection fails, just show basic info
+        containerDetails = `\n📋 Container ID: ${containerId}`;
+      }
+      
+      const message = `🚀 Successfully started container from image: ${params.imageName}${containerDetails}
+
+💡 Tips:
+   • View logs: dlogs ${containerId.substring(0, 12)}
+   • Execute commands: dexec -it ${containerId.substring(0, 12)} /bin/sh
+   • Stop container: docker stop ${containerId.substring(0, 12)}`;
+      
+      return createResponse('docker-run', message, false, process.cwd(), startTime);
+    }
     
   } catch (error: any) {
     return createResponse('docker-run', `Error: ${error.message}`, true, process.cwd(), startTime);
@@ -389,15 +856,185 @@ export async function dockerBuild(params: any): Promise<DockerOperationResult> {
       return createResponse('docker-build', `Error: Context path does not exist: ${params.contextPath}`, true, process.cwd(), startTime);
     }
 
-    let command = `docker build "${params.contextPath}"`;
+    let command = 'docker build';
     
-    if (params.dockerfilePath) {
-      command += ` -f "${params.dockerfilePath}"`;
+    // Dockerfile path
+    if (params.dockerfilePath || params.file || params.f) {
+      const dockerfile = params.dockerfilePath || params.file || params.f;
+      command += ` -f "${dockerfile}"`;
     }
     
-    if (params.tag) {
-      command += ` -t "${params.tag}"`;
+    // Tags
+    if (params.tag || params.t) {
+      const tags = params.tag || params.t;
+      if (Array.isArray(tags)) {
+        tags.forEach(tag => command += ` -t "${tag}"`);
+      } else {
+        command += ` -t "${tags}"`;
+      }
     }
+    
+    // Build arguments
+    if (params.buildArg) {
+      if (Array.isArray(params.buildArg)) {
+        params.buildArg.forEach((arg: string) => command += ` --build-arg ${arg}`);
+      } else {
+        command += ` --build-arg ${params.buildArg}`;
+      }
+    }
+    
+    // Cache options
+    if (params.noCache) {
+      command += ' --no-cache';
+    }
+    
+    if (params.pull) {
+      command += ' --pull';
+    }
+    
+    if (params.cacheFrom) {
+      if (Array.isArray(params.cacheFrom)) {
+        params.cacheFrom.forEach((cache: string) => command += ` --cache-from ${cache}`);
+      } else {
+        command += ` --cache-from ${params.cacheFrom}`;
+      }
+    }
+    
+    // Container removal options
+    if (params.rm !== false) {
+      command += ' --rm'; // Default behavior
+    }
+    
+    if (params.forceRm) {
+      command += ' --force-rm';
+    }
+    
+    // Memory and CPU limits
+    if (params.memory || params.m) {
+      command += ` -m ${params.memory || params.m}`;
+    }
+    
+    if (params.cpuShares) {
+      command += ` --cpu-shares ${params.cpuShares}`;
+    }
+    
+    if (params.cpuPeriod) {
+      command += ` --cpu-period ${params.cpuPeriod}`;
+    }
+    
+    if (params.cpuQuota) {
+      command += ` --cpu-quota ${params.cpuQuota}`;
+    }
+    
+    if (params.cpusetCpus) {
+      command += ` --cpuset-cpus ${params.cpusetCpus}`;
+    }
+    
+    if (params.cpusetMems) {
+      command += ` --cpuset-mems ${params.cpusetMems}`;
+    }
+    
+    // Network mode during build
+    if (params.network) {
+      command += ` --network ${params.network}`;
+    }
+    
+    // Labels
+    if (params.label) {
+      if (Array.isArray(params.label)) {
+        params.label.forEach((label: string) => command += ` --label ${label}`);
+      } else {
+        command += ` --label ${params.label}`;
+      }
+    }
+    
+    // Target stage for multi-stage builds
+    if (params.target) {
+      command += ` --target ${params.target}`;
+    }
+    
+    // Platform
+    if (params.platform) {
+      command += ` --platform ${params.platform}`;
+    }
+    
+    // Progress output
+    if (params.progress) {
+      command += ` --progress ${params.progress}`;
+    }
+    
+    // Quiet mode
+    if (params.quiet || params.q) {
+      command += ' -q';
+    }
+    
+    // Security options
+    if (params.securityOpt) {
+      if (Array.isArray(params.securityOpt)) {
+        params.securityOpt.forEach((opt: string) => command += ` --security-opt ${opt}`);
+      } else {
+        command += ` --security-opt ${params.securityOpt}`;
+      }
+    }
+    
+    // Squash layers
+    if (params.squash) {
+      command += ' --squash';
+    }
+    
+    // SSH agent
+    if (params.ssh) {
+      if (Array.isArray(params.ssh)) {
+        params.ssh.forEach((ssh: string) => command += ` --ssh ${ssh}`);
+      } else {
+        command += ` --ssh ${params.ssh}`;
+      }
+    }
+    
+    // Build secrets
+    if (params.secret) {
+      if (Array.isArray(params.secret)) {
+        params.secret.forEach((secret: string) => command += ` --secret ${secret}`);
+      } else {
+        command += ` --secret ${params.secret}`;
+      }
+    }
+    
+    // Add-hosts
+    if (params.addHost) {
+      if (Array.isArray(params.addHost)) {
+        params.addHost.forEach((host: string) => command += ` --add-host ${host}`);
+      } else {
+        command += ` --add-host ${params.addHost}`;
+      }
+    }
+    
+    // Ulimit
+    if (params.ulimit) {
+      if (Array.isArray(params.ulimit)) {
+        params.ulimit.forEach((limit: string) => command += ` --ulimit ${limit}`);
+      } else {
+        command += ` --ulimit ${params.ulimit}`;
+      }
+    }
+    
+    // Shm size
+    if (params.shmSize) {
+      command += ` --shm-size ${params.shmSize}`;
+    }
+    
+    // Iidfile
+    if (params.iidfile) {
+      command += ` --iidfile ${params.iidfile}`;
+    }
+    
+    // Isolation
+    if (params.isolation) {
+      command += ` --isolation ${params.isolation}`;
+    }
+    
+    // Add context path at the end
+    command += ` "${params.contextPath}"`;
     
     const result = await executeDockerCommand(command, 600000); // 10 minutes timeout for builds
     
@@ -725,9 +1362,14 @@ export interface DockerLoginParams {
   token?: string;
 }
 
+export interface DockerLogoutParams {
+  registry?: string;
+}
+
 /**
- * Logs in to a Docker registry with multiple authentication methods
- * @param params - Parameters including registry URL, credentials, or interactive mode
+ * Simplified Docker login that only asks for username and runs login in background
+ * Password is requested securely by Docker's own login process
+ * @param params - Parameters including registry URL and username
  * @returns DockerOperationResult with login status
  */
 export async function dockerLogin(params: DockerLoginParams = {}): Promise<DockerOperationResult> {
@@ -738,96 +1380,249 @@ export async function dockerLogin(params: DockerLoginParams = {}): Promise<Docke
       return createResponse('docker-login', 'Error: Docker daemon is not running. Please start Docker first.', true, process.cwd(), startTime);
     }
 
-    const { registry = 'docker.io', username, password, interactive = true, token } = params;
+    const { registry = 'docker.io', username, token } = params;
     
-    let command = 'docker login';
+    // If no username provided, show current login status
+    if (!username && !token) {
+      const whoamiResult = await executeDockerCommand('docker system info --format "{{.Username}}"').catch(() => null);
+      
+      let statusMessage = `🔐 Docker Registry Login Status\n`;
+      statusMessage += `${'═'.repeat(50)}\n\n`;
+      statusMessage += `Registry: ${registry === 'docker.io' ? 'Docker Hub (docker.io)' : registry}\n`;
+      
+      if (whoamiResult?.stdout?.trim()) {
+        statusMessage += `Current User: ${whoamiResult.stdout.trim()}\n`;
+        statusMessage += `Status: ✅ Already logged in\n\n`;
+        statusMessage += `💡 To login with different user:\n`;
+        statusMessage += `   dlogin --username <your-username>\n`;
+        statusMessage += `   dlogin --registry ghcr.io --username <your-username>\n`;
+      } else {
+        statusMessage += `Status: ❌ Not logged in\n\n`;
+        statusMessage += `💡 To login, provide your username:\n`;
+        statusMessage += `   dlogin --username <your-username>\n`;
+        statusMessage += `   dlogin --registry ghcr.io --username <your-username>\n\n`;
+        statusMessage += `🔒 Docker will prompt for your password securely.\n`;
+      }
+      
+      return createResponse('docker-login', statusMessage, false, process.cwd(), startTime);
+    }
+
+    // Handle token authentication (for GitHub Container Registry, etc.)
+    if (token) {
+      const { spawn } = await import('child_process');
+      let command = ['login'];
+      
+      // Add registry if not default Docker Hub
+      if (registry && registry !== 'docker.io') {
+        command.push(registry);
+      }
+      
+      command.push('--username', 'token', '--password-stdin');
+      
+      const proc = spawn('docker', command, {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      proc.stdin.write(token);
+      proc.stdin.end();
+      
+      const result: { stdout: string; stderr: string; code: number } = await new Promise((resolve) => {
+        let stdout = '';
+        let stderr = '';
+        proc.stdout.on('data', (data) => stdout += data.toString());
+        proc.stderr.on('data', (data) => stderr += data.toString());
+        proc.on('close', (code) => {
+          resolve({ stdout, stderr, code: code || 0 });
+        });
+      });
+      
+      if (result.code === 0) {
+        const message = `🔐 ✅ Successfully logged in to ${registry === 'docker.io' ? 'Docker Hub' : registry} using token authentication\n\n${result.stdout.trim()}`;
+        return createResponse('docker-login', message, false, process.cwd(), startTime);
+      } else {
+        const message = `❌ Failed to login to ${registry === 'docker.io' ? 'Docker Hub' : registry} using token authentication\n${result.stderr.trim()}`;
+        return createResponse('docker-login', message, true, process.cwd(), startTime);
+      }
+    }
+    
+    // Handle username authentication - simplified to only need username
+    if (username) {
+      const { spawn } = await import('child_process');
+      let command = ['login'];
+      
+      // Add registry if not default Docker Hub
+      if (registry && registry !== 'docker.io') {
+        command.push(registry);
+      }
+      
+      command.push('--username', username);
+      
+      // Run docker login with inherited stdio so user can enter password
+      const proc = spawn('docker', command, {
+        stdio: 'inherit'
+      });
+      
+      const exitCode: number = await new Promise((resolve) => {
+        proc.on('close', (code) => resolve(code || 0));
+      });
+      
+      if (exitCode === 0) {
+        const message = `🔐 ✅ Successfully logged in to ${registry === 'docker.io' ? 'Docker Hub' : registry} as ${username}\n\n🎉 You can now push and pull private images!`;
+        return createResponse('docker-login', message, false, process.cwd(), startTime);
+      } else {
+        const message = `❌ Failed to login to ${registry === 'docker.io' ? 'Docker Hub' : registry} as ${username}\n\n💡 Please check your username and password.`;
+        return createResponse('docker-login', message, true, process.cwd(), startTime);
+      }
+    }
+    
+    return createResponse('docker-login', 'Error: Please provide either username or token for authentication.\n\n💡 Usage: dlogin --username <your-username>', true, process.cwd(), startTime);
+    
+  } catch (error: any) {
+    return createResponse('docker-login', `❌ Login error: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Docker logout from registry
+ * @param params - Parameters including registry URL
+ * @returns DockerOperationResult with logout status
+ */
+export async function dockerLogout(params: DockerLogoutParams = {}): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    if (!(await isDockerRunning())) {
+      return createResponse('docker-logout', 'Error: Docker daemon is not running. Please start Docker first.', true, process.cwd(), startTime);
+    }
+
+    const { registry = 'docker.io' } = params;
+    
+    let command = 'docker logout';
     
     // Add registry if not default Docker Hub
     if (registry && registry !== 'docker.io') {
       command += ` ${registry}`;
     }
     
-    // Handle different authentication methods
-    if (token) {
-      // Token-based authentication (for GitHub Container Registry, etc.)
-      command += ` --username token --password-stdin`;
-      // Execute command with stdin input
-      const { spawn } = await import('child_process');
-      const proc = spawn('sh', ['-c', command], {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-      proc.stdin.write(token);
-      proc.stdin.end();
-      const result: { stdout: string; stderr: string } = await new Promise((resolve, reject) => {
-        let stdout = '';
-        let stderr = '';
-        proc.stdout.on('data', (data) => stdout += data.toString());
-        proc.stderr.on('data', (data) => stderr += data.toString());
-        proc.on('close', (code) => {
-          if (code === 0) {
-            resolve({ stdout, stderr });
-          } else {
-            reject(new Error(`Command failed with code ${code}: ${stderr}`));
-          }
-        });
-      });
-      const message = `🔐 Successfully logged in to ${registry} using token authentication\n\n${result.stdout}`;
-      return createResponse('docker-login', message, false, process.cwd(), startTime);
-    } else if (username && password) {
-      // Username/password authentication
-      command += ` -u "${username}" --password-stdin`;
-      // Execute command with stdin input
-      const { spawn } = await import('child_process');
-      const loginProcess = spawn('sh', ['-c', command], {
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-      loginProcess.stdin.write(password);
-      loginProcess.stdin.end();
-      const result: { stdout: string; stderr: string } = await new Promise((resolve, reject) => {
-        let stdout = '';
-        let stderr = '';
-        loginProcess.stdout.on('data', (data) => stdout += data.toString());
-        loginProcess.stderr.on('data', (data) => stderr += data.toString());
-        loginProcess.on('close', (code) => {
-          if (code === 0) {
-            resolve({ stdout, stderr });
-          } else {
-            reject(new Error(`Command failed with code ${code}: ${stderr}`));
-          }
-        });
-      });
-      const message = `🔐 Successfully logged in to ${registry} as ${username}\n\n${result.stdout}`;
-      return createResponse('docker-login', message, false, process.cwd(), startTime);
-    } else if (interactive) {
-      // Interactive login - shows status of current login
-      const whoamiResult = await executeDockerCommand('docker system info --format "{{.Username}}"').catch(() => null);
-      
-      let statusMessage = `🔐 Docker Registry Login Status\n`;
-      statusMessage += `${'='.repeat(40)}\n\n`;
-      statusMessage += `Registry: ${registry}\n`;
-      
-      if (whoamiResult?.stdout?.trim()) {
-        statusMessage += `Current User: ${whoamiResult.stdout.trim()}\n`;
-        statusMessage += `Status: ✅ Logged in\n\n`;
-        statusMessage += `💡 To login with different credentials:\n`;
-        statusMessage += `   • Use: dlogin <registry> --username <user> --password <pass>\n`;
-        statusMessage += `   • Use: dlogin <registry> --token <token> (for token auth)\n`;
-      } else {
-        statusMessage += `Status: ❌ Not logged in\n\n`;
-        statusMessage += `💡 To login:\n`;
-        statusMessage += `   • Docker Hub: dlogin --username <user> --password <pass>\n`;
-        statusMessage += `   • Custom registry: dlogin <registry-url> --username <user> --password <pass>\n`;
-        statusMessage += `   • GitHub: dlogin ghcr.io --username <user> --token <token>\n`;
-        statusMessage += `   • Interactive: Run 'docker login' in terminal\n`;
-      }
-      
-      return createResponse('docker-login', statusMessage, false, process.cwd(), startTime);
+    const result = await executeDockerCommand(command);
+    
+    if (result.stdout || result.stderr) {
+      const message = `🔐 Successfully logged out from ${registry === 'docker.io' ? 'Docker Hub' : registry}\n\n${(result.stdout + result.stderr).trim()}\n\n💡 You'll need to login again to access private repositories.`;
+      return createResponse('docker-logout', message, false, process.cwd(), startTime);
     } else {
-      return createResponse('docker-login', 'Error: Either provide username/password, token, or use interactive mode.', true, process.cwd(), startTime);
+      const message = `🔐 ✅ Successfully logged out from ${registry === 'docker.io' ? 'Docker Hub' : registry}\n\n💡 You'll need to login again to access private repositories.`;
+      return createResponse('docker-logout', message, false, process.cwd(), startTime);
     }
     
   } catch (error: any) {
-    return createResponse('docker-login', `Error: ${error.message}`, true, process.cwd(), startTime);
+    return createResponse('docker-logout', `❌ Logout error: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Manages Docker bridge networks and connections
+ * @param params - Parameters including action and bridge details
+ * @returns DockerOperationResult with bridge operation status
+ */
+export async function dockerBridge(params: any): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    if (!(await isDockerRunning())) {
+      return createResponse('docker-bridge', 'Error: Docker daemon is not running. Please start Docker first.', true, process.cwd(), startTime);
+    }
+
+    let command = '';
+    let resultText = '';
+
+    switch (params?.action) {
+      case 'list':
+      case 'ls':
+        command = "docker network ls --filter driver=bridge --format 'table {{.ID}}\t{{.Name}}\t{{.Driver}}\t{{.Scope}}'";
+        break;
+      case 'inspect':
+        if (!params.bridgeName) {
+          return createResponse('docker-bridge', 'Error: Bridge name is required for inspect action.', true, process.cwd(), startTime);
+        }
+        command = `docker network inspect ${params.bridgeName}`;
+        break;
+      case 'create':
+        if (!params.bridgeName) {
+          return createResponse('docker-bridge', 'Error: Bridge name is required for create action.', true, process.cwd(), startTime);
+        }
+        command = `docker network create --driver bridge`;
+        if (params.subnet) {
+          command += ` --subnet=${params.subnet}`;
+        }
+        if (params.gateway) {
+          command += ` --gateway=${params.gateway}`;
+        }
+        if (params.ipRange) {
+          command += ` --ip-range=${params.ipRange}`;
+        }
+        command += ` ${params.bridgeName}`;
+        break;
+      case 'remove':
+      case 'rm':
+        if (!params.bridgeName) {
+          return createResponse('docker-bridge', 'Error: Bridge name is required for remove action.', true, process.cwd(), startTime);
+        }
+        command = `docker network rm ${params.bridgeName}`;
+        break;
+      case 'connect':
+        if (!params.bridgeName || !params.containerName) {
+          return createResponse('docker-bridge', 'Error: Bridge name and container name are required for connect action.', true, process.cwd(), startTime);
+        }
+        command = `docker network connect ${params.bridgeName} ${params.containerName}`;
+        if (params.ip) {
+          command += ` --ip ${params.ip}`;
+        }
+        break;
+      case 'disconnect':
+        if (!params.bridgeName || !params.containerName) {
+          return createResponse('docker-bridge', 'Error: Bridge name and container name are required for disconnect action.', true, process.cwd(), startTime);
+        }
+        command = `docker network disconnect ${params.bridgeName} ${params.containerName}`;
+        break;
+      case 'prune':
+        command = 'docker network prune --filter driver=bridge -f';
+        break;
+      default:
+        return createResponse('docker-bridge', 'Error: Invalid action. Use: list, inspect, create, remove, connect, disconnect, or prune.', true, process.cwd(), startTime);
+    }
+
+    const result = await executeDockerCommand(command);
+    
+    switch (params.action) {
+      case 'list':
+      case 'ls':
+        resultText = `🌉 Docker Bridge Networks:\n\n${result.stdout}`;
+        break;
+      case 'inspect':
+        resultText = `🔍 Bridge network details for ${params.bridgeName}:\n\n${result.stdout}`;
+        break;
+      case 'create':
+        resultText = `✅ Successfully created bridge network: ${params.bridgeName}\n\n${result.stdout}`;
+        break;
+      case 'remove':
+      case 'rm':
+        resultText = `🗑️ Successfully removed bridge network: ${params.bridgeName}`;
+        break;
+      case 'connect':
+        resultText = `🔗 Successfully connected container ${params.containerName} to bridge ${params.bridgeName}`;
+        break;
+      case 'disconnect':
+        resultText = `🔌 Successfully disconnected container ${params.containerName} from bridge ${params.bridgeName}`;
+        break;
+      case 'prune':
+        resultText = `🧹 Successfully pruned unused bridge networks\n\n${result.stdout}`;
+        break;
+    }
+    
+    return createResponse('docker-bridge', resultText, false, process.cwd(), startTime);
+    
+  } catch (error: any) {
+    return createResponse('docker-bridge', `Error: ${error.message}`, true, process.cwd(), startTime);
   }
 }
 
@@ -845,86 +1640,146 @@ export async function dockerList(params: any = {}): Promise<DockerOperationResul
     const listMessage = `
 🐳 Docker MCP Server - Available Tools & CLI Aliases
 
-═══════════════════════════════════════════════════════════════
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                        📦 QUICK INSTALLATION                             ║
+╚═══════════════════════════════════════════════════════════════════════════╝
 
-📦 BASIC OPERATIONS (bin/basic/)
-═══════════════════════════════════════════════════════════════
-┌─────────────┬────────────────────────────────────────────────┐
-│ Alias       │ Description                                    │
-├─────────────┼────────────────────────────────────────────────┤
-│ dimages     │ List all Docker images                        │
-│ dps         │ List running containers                       │
-│ dpsa        │ List all containers (including stopped)      │
-│ dpull       │ Pull Docker images from registry             │
-│ drun        │ Run Docker containers with options           │
-│ dlogs       │ View container logs (with follow support)    │
-│ dexec       │ Execute commands in running containers       │
-│ dbuild      │ Build Docker images from Dockerfile          │
-└─────────────┴────────────────────────────────────────────────┘
+� Install globally to use all aliases anywhere:
+   npm install -g .
 
-🔧 ADVANCED OPERATIONS (bin/advanced/)
-═══════════════════════════════════════════════════════════════
-┌─────────────┬────────────────────────────────────────────────┐
-│ Alias       │ Description                                    │
-├─────────────┼────────────────────────────────────────────────┤
-│ dcompose    │ Docker Compose operations (up/down/build)     │
-│ dup         │ Start services with docker-compose up        │
-│ ddown       │ Stop services with docker-compose down       │
-│ dnetwork    │ Manage Docker networks (create/list/remove)  │
-│ dvolume     │ Manage Docker volumes (create/list/remove)   │
-│ dinspect    │ Inspect Docker resources in detail           │
-│ dprune      │ Clean up unused Docker resources             │
-│ dlogin      │ Login to Docker registries                   │
-│ ddev        │ Development container workflows              │
-│ dclean      │ Comprehensive Docker system cleanup          │
-│ dstop       │ Stop containers and services                 │
-│ dreset      │ Reset Docker environment                     │
-└─────────────┴────────────────────────────────────────────────┘
+🔧 Or run the install script:
+   npm run install:global
 
-🚀 MAIN CLI COMMANDS
-═══════════════════════════════════════════════════════════════
-┌─────────────────────┬──────────────────────────────────────────┐
-│ Command             │ Description                              │
-├─────────────────────┼──────────────────────────────────────────┤
-│ docker-mcp-server   │ Main CLI with all tools                 │
-│ dms                 │ Short alias for docker-mcp-server       │
-│ dlist               │ Show this help (list all tools)         │
-└─────────────────────┴──────────────────────────────────────────┘
+💡 After global installation, all aliases below work from any directory!
 
-📖 USAGE EXAMPLES
-═══════════════════════════════════════════════════════════════
-• List images:           dimages
-• List containers:       dps or dpsa
-• Pull image:            dpull nginx:latest
-• Run container:         drun -p 8080:80 nginx
-• View logs:             dlogs mycontainer --follow
-• Execute command:       dexec mycontainer bash
-• Build image:           dbuild -t myapp .
-• Start compose:         dup or dcompose up
-• Stop compose:          ddown or dcompose down
-• Create network:        dnetwork create mynet
-• Create volume:         dvolume create myvol
-• Inspect resource:      dinspect container myapp
-• Clean system:          dclean all or dprune all
-• Login to registry:     dlogin --username myuser
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                          �📦 BASIC OPERATIONS                             ║
+║                            (bin/basic/)                                   ║
+╚═══════════════════════════════════════════════════════════════════════════╝
 
-🔗 MCP TOOLS (Available via MCP Protocol)
-═══════════════════════════════════════════════════════════════
-• docker-images         • docker-containers      • docker-pull
-• docker-run            • docker-logs            • docker-build
-• docker-exec           • docker-compose         • docker-networks
-• docker-volumes        • docker-inspect         • docker-prune
-• docker-login          • docker-list            
+┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🔧 Alias   ┃ 📝 Description                                             ┃
+┣━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ dimages    ┃ 📋 List all Docker images with size and tags              ┃
+┃ dps        ┃ 🟢 List running containers                                 ┃
+┃ dpsa       ┃ 📊 List all containers (including stopped)                ┃
+┃ dpull      ┃ ⬇️  Pull Docker images from registry                       ┃
+┃ drun       ┃ 🚀 Run Docker containers with options                     ┃
+┃ dlogs      ┃ 📄 View container logs (with follow support)              ┃
+┃ dexec      ┃ 💻 Execute commands in running containers                  ┃
+┃ dbuild     ┃ 🔨 Build Docker images from Dockerfile                    ┃
+┗━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-💡 TIPS
-═══════════════════════════════════════════════════════════════
-• All commands include --help for detailed usage
-• CLI aliases work globally after: npm install -g .
-• MCP tools can be used in Claude Desktop or other MCP clients
-• Use 'docker-mcp-server help' for interactive help
-• Check server status with: docker-mcp-server status
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         🔧 ADVANCED OPERATIONS                           ║
+║                           (bin/advanced/)                                 ║
+╚═══════════════════════════════════════════════════════════════════════════╝
 
-📚 For more information, visit: https://github.com/0xshariq/docker-mcp-server
+┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🔧 Alias   ┃ 📝 Description                                             ┃
+┣━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ dcompose   ┃ 🐙 Docker Compose operations (up/down/build)               ┃
+┃ dup        ┃ ⬆️  Start services with docker-compose up                  ┃
+┃ ddown      ┃ ⬇️  Stop services with docker-compose down                 ┃
+┃ dnetwork   ┃ 🌐 Manage Docker networks (create/list/remove)             ┃
+┃ dvolume    ┃ 💾 Manage Docker volumes (create/list/remove)              ┃
+┃ dinspect   ┃ 🔍 Inspect Docker resources in detail                      ┃
+┃ dprune     ┃ 🧹 Clean up unused Docker resources                        ┃
+┃ dlogin     ┃ 🔐 Login to Docker registries (simplified)                ┃
+┃ dlogout    ┃ 🚪 Logout from Docker registries                          ┃
+┃ dbridge    ┃ 🌉 Manage Docker bridge networks                          ┃
+┃ ddev       ┃ 👨‍💻 Development container workflows                        ┃
+┃ dclean     ┃ 🧽 Comprehensive Docker system cleanup                     ┃
+┃ dstop      ┃ ⏹️  Stop containers and services                           ┃
+┃ dreset     ┃ 🔄 Reset Docker environment                                ┃
+┗━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                          🚀 MAIN CLI COMMANDS                            ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🔧 Command          ┃ 📝 Description                                      ┃
+┣━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+┃ docker-mcp-server   ┃ 🎛️  Main CLI with all tools                        ┃
+┃ dms                 ┃ ⚡ Short alias for docker-mcp-server               ┃
+┃ dlist               ┃ 📋 Show this help (list all tools)                 ┃
+┗━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                          📖 USAGE EXAMPLES                               ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+💡 Basic Operations:
+   dimages                    # List all images
+   dps                        # List running containers
+   dpsa                       # List all containers
+   dpull nginx:latest         # Pull specific image
+   drun -p 8080:80 nginx      # Run container with port mapping
+   dlogs mycontainer --follow # Follow container logs
+   dexec mycontainer bash     # Open bash in container
+   dbuild -t myapp .          # Build image from current directory
+
+🔧 Advanced Operations:
+   dup                        # Start compose services
+   ddown                      # Stop compose services
+   dnetwork create mynet      # Create custom network
+   dvolume create myvol       # Create named volume
+   dinspect container myapp   # Inspect container details
+   dclean all                 # Clean unused resources
+   dprune images              # Remove unused images
+
+🔐 Registry Operations:
+   dlogin --username myuser   # Login to Docker Hub (password prompted)
+   dlogout                    # Logout from Docker Hub
+   dlogin --registry ghcr.io --username myuser  # Login to GitHub registry
+
+🌉 Bridge Network Operations:
+   dbridge list               # List all bridge networks
+   dbridge create mybridge    # Create custom bridge network
+   dbridge connect mybridge mycontainer  # Connect container to bridge
+   dbridge disconnect mybridge mycontainer  # Disconnect from bridge
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                      🔗 MCP TOOLS (Via MCP Protocol)                     ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+Available in Claude Desktop and other MCP clients:
+• docker-images    • docker-containers  • docker-pull      • docker-run
+• docker-logs      • docker-build       • docker-exec      • docker-compose
+• docker-networks  • docker-volumes     • docker-inspect   • docker-prune
+• docker-login     • docker-logout      • docker-bridge    • docker-list      
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                             💡 PRO TIPS                                  ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+🎯 Quick Setup:
+   1. npm install -g .                # Install globally
+   2. dlist                           # Verify installation
+   3. dimages                         # Test basic functionality
+
+🚀 Development Workflow:
+   1. dbuild -t myapp .               # Build your application
+   2. drun -p 3000:3000 myapp         # Run with port mapping
+   3. dlogs myapp                     # Check application logs
+   4. dexec myapp bash                # Debug inside container
+
+🧹 Maintenance:
+   1. dprune containers               # Remove stopped containers
+   2. dprune images                   # Remove unused images
+   3. dclean deep                     # Deep system cleanup
+
+📖 Documentation:
+   • All commands support --help flag for detailed usage
+   • Use 'docker-mcp-server help' for interactive help
+   • Check server status: docker-mcp-server status
+
+� Global Access:
+   After running 'npm install -g .' all aliases work system-wide!
+   No need for 'npx' or project-specific installation.
+
+📚 More Info: https://github.com/0xshariq/docker-mcp-server
 `;
 
     return createResponse('docker-list', listMessage.trim(), false, process.cwd(), startTime);

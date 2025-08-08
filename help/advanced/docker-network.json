@@ -1,0 +1,73 @@
+{
+  "name": "docker-network",
+  "aliases": ["dnetwork"],
+  "category": "Advanced Network Management",
+  "description": "Manage Docker networks for container communication",
+  "usage": "docker-network <action> [networkName] [options]",
+  "examples": [
+    {
+      "command": "dnetwork list",
+      "description": "List all Docker networks"
+    },
+    {
+      "command": "dnetwork create mynetwork",
+      "description": "Create a new network"
+    },
+    {
+      "command": "dnetwork inspect mynetwork",
+      "description": "Display detailed information about a network"
+    },
+    {
+      "command": "dnetwork remove mynetwork",
+      "description": "Remove a network"
+    },
+    {
+      "command": "dnetwork --help",
+      "description": "Show this help message"
+    }
+  ],
+  "actions": [
+    "list - List all networks",
+    "create - Create a new network",
+    "remove - Remove one or more networks",
+    "inspect - Display detailed information on one or more networks",
+    "connect - Connect a container to a network",
+    "disconnect - Disconnect a container from a network",
+    "prune - Remove all unused networks"
+  ],
+  "options": [
+    {
+      "flag": "--driver <driver>",
+      "description": "Driver to manage the network (bridge, overlay, etc.)"
+    },
+    {
+      "flag": "--subnet <subnet>",
+      "description": "Subnet in CIDR format (e.g., 172.20.0.0/16)"
+    },
+    {
+      "flag": "--gateway <gateway>",
+      "description": "IPv4 or IPv6 gateway for the master subnet"
+    },
+    {
+      "flag": "--label <label>",
+      "description": "Set metadata on a network"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "network_types": [
+    "bridge - Default network driver for standalone containers",
+    "overlay - Multi-host networking for Docker Swarm",
+    "host - Use host's networking directly",
+    "none - Disable all networking",
+    "macvlan - Assign MAC address to containers"
+  ],
+  "notes": [
+    "💡 Containers on same network can communicate by container name",
+    "🔧 Bridge networks provide isolation between containers",
+    "🌐 Overlay networks enable multi-host container communication",
+    "⚡ Custom networks provide better isolation than default bridge"
+  ]
+}

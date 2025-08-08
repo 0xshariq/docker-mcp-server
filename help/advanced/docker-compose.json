@@ -1,0 +1,79 @@
+{
+  "name": "docker-compose",
+  "aliases": ["dcompose", "dup", "ddown"],
+  "category": "Advanced Compose Operations",
+  "description": "Manage multi-container Docker applications using Docker Compose",
+  "usage": "docker-compose <command> [options]",
+  "examples": [
+    {
+      "command": "dcompose up",
+      "description": "Create and start containers"
+    },
+    {
+      "command": "dup",
+      "description": "Shortcut for 'dcompose up' - start all services"
+    },
+    {
+      "command": "ddown",
+      "description": "Shortcut for 'dcompose down' - stop and remove containers"
+    },
+    {
+      "command": "dcompose build",
+      "description": "Build or rebuild services"
+    },
+    {
+      "command": "dcompose logs",
+      "description": "View output from containers"
+    },
+    {
+      "command": "dcompose --help",
+      "description": "Show this help message"
+    }
+  ],
+  "options": [
+    {
+      "flag": "-f, --file <file>",
+      "description": "Specify an alternate compose file"
+    },
+    {
+      "flag": "-p, --project-name <name>",
+      "description": "Specify an alternate project name"
+    },
+    {
+      "flag": "-d, --detach",
+      "description": "Detached mode: Run containers in the background"
+    },
+    {
+      "flag": "--build",
+      "description": "Build images before starting containers"
+    },
+    {
+      "flag": "--force-recreate",
+      "description": "Recreate containers even if their configuration hasn't changed"
+    },
+    {
+      "flag": "--remove-orphans",
+      "description": "Remove containers for services not defined in the Compose file"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "commands": [
+    "up - Create and start containers",
+    "down - Stop and remove containers, networks, images, and volumes",
+    "build - Build or rebuild services",
+    "logs - View output from containers",
+    "ps - List containers",
+    "restart - Restart services",
+    "stop - Stop services",
+    "start - Start services"
+  ],
+  "notes": [
+    "💡 Requires docker-compose.yml or compose.yaml file in current directory",
+    "🔧 Use 'dup' for quick start and 'ddown' for quick stop",
+    "📦 Manages entire application stacks with multiple services",
+    "⚡ Automatically creates networks and volumes as needed"
+  ]
+}

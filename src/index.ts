@@ -50,6 +50,8 @@ import {
   dockerExec,
   dockerPrune,
   dockerLogin,
+  dockerLogout,
+  dockerBridge,
   dockerList
 } from "./docker.js";
 
@@ -357,6 +359,62 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         }
       },
       {
+        name: "docker-logout",
+        description: "Log out from a Docker registry",
+        inputSchema: {
+          type: "object",
+          properties: {
+            registry: {
+              type: "string",
+              description: "Registry to logout from (defaults to Docker Hub)"
+            },
+            all: {
+              type: "boolean",
+              description: "Logout from all registries"
+            }
+          }
+        }
+      },
+      {
+        name: "docker-bridge",
+        description: "Manage Docker bridge networks and connections",
+        inputSchema: {
+          type: "object",
+          properties: {
+            action: {
+              type: "string",
+              description: "Action to perform",
+              enum: ["list", "inspect", "create", "remove", "connect", "disconnect", "prune"]
+            },
+            bridgeName: {
+              type: "string",
+              description: "Name of the bridge network"
+            },
+            containerName: {
+              type: "string",
+              description: "Name of the container (for connect/disconnect)"
+            },
+            subnet: {
+              type: "string",
+              description: "Subnet for the bridge network (CIDR format)"
+            },
+            gateway: {
+              type: "string",
+              description: "Gateway IP for the bridge network"
+            },
+            ipRange: {
+              type: "string",
+              description: "IP range for the bridge network"
+            },
+            ip: {
+              type: "string",
+              description: "Specific IP address for container connection"
+            }
+          },
+          required: ["action"]
+        }
+      },
+      {
         name: "docker-list",
         description: "List all available Docker MCP tools and CLI aliases with usage examples",
         inputSchema: {
@@ -533,6 +591,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: JSON.stringify(await dockerLogin(args))
+            }
+          ]
+        };
+
+      case "docker-logout":
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(await dockerLogout(args))
+            }
+          ]
+        };
+
+      case "docker-bridge":
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(await dockerBridge(args))
             }
           ]
         };

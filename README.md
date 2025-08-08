@@ -1,29 +1,71 @@
 # Docker MCP Server
 
-A Model Context Protocol (MCP) server that provides comprehensive Docker operations through a simple interface. This server exposes 14 Docker tools and includes a powerful CLI wrapper with 22+ convenient aliases.
+A comprehensive Model Context Protocol (MCP) server that provides advanced Docker operations through a unified interface. This server combines 16 powerful Docker MCP tools with 24+ convenient CLI aliases to create a complete Docker workflow solution for developers, DevOps engineers, and system administrators.
 
-## 🚀 Features
+## 🌟 What Makes Docker MCP Server Special
 
-- **14 Docker Tools**: Complete Docker operations via MCP protocol including docker-list
-- **CLI Wrapper**: Easy-to-use command-line interface with aliases
-- **22 Bin Scripts**: Individual executable scripts for each Docker operation
-- **Global Installation**: Install globally for system-wide CLI access
-- **TypeScript**: Fully typed with ES modules support
-- **Error Handling**: Robust error handling and timeout protection
-- **Cross-Platform**: Works on Linux, macOS, and Windows
+Docker MCP Server is not just another Docker wrapper - it's a complete Docker workflow enhancement system designed to make Docker operations more intuitive, secure, and efficient:
+
+### 🎯 **Unified Interface**
+- **MCP Protocol Integration**: Seamlessly works with MCP-compatible tools and IDEs
+- **CLI Convenience**: 24+ carefully crafted aliases for common Docker workflows
+- **Consistent API**: All operations follow the same patterns and conventions
+- **Cross-Platform**: Full support for Linux, macOS, and Windows environments
+
+### 🔒 **Security-First Design**
+- **Secure Authentication**: Enhanced docker login with username-only CLI parameters
+- **No Password Exposure**: Credentials never appear in command history or process lists
+- **Registry Flexibility**: Support for Docker Hub, AWS ECR, Azure ACR, Google GCR, and custom registries
+- **Permission Management**: Proper handling of Docker daemon permissions
+
+### 🚀 **Developer Experience**
+- **Comprehensive Help System**: Every command includes detailed documentation with `--help`
+- **Smart Defaults**: Sensible default configurations for common use cases
+- **Error Prevention**: Built-in safety checks and confirmation prompts for destructive operations
+- **Rich Output**: Formatted, colored output with clear status indicators
+
+### 📊 **Advanced Operations**
+- **Multi-Container Management**: Docker Compose integration with service orchestration
+- **Network & Volume Management**: Advanced networking and storage operations
+- **System Maintenance**: Intelligent cleanup tools with multiple safety levels
+- **Development Workflows**: Specialized commands for development environments
 
 ## 📦 Installation
 
-### Prerequisites
-- Node.js 18+ 
-- Docker installed and running
-- npm or pnpm package manager
-- TypeScript (for development)
+### NPM Package Installation (Recommended)
 
-### Quick Installation
+Install Docker MCP Server as a global npm package for system-wide access:
+
+```bash
+# Install globally via npm
+npm install -g docker-mcp-server
+
+# Install globally via pnpm (faster)
+pnpm add -g docker-mcp-server
+
+# Install globally via yarn
+yarn global add docker-mcp-server
+
+# Verify installation
+docker-mcp-server --version
+```
+
+After global installation, all CLI aliases will be available in your PATH:
+```bash
+# Use anywhere in your system
+drun nginx                    # Run nginx container
+dbuild -t myapp .            # Build image from current directory
+dps                          # List running containers
+dcompose up -d               # Start compose services in background
+```
+
+### Development Installation
+
+For development or customization:
+
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/yourusername/docker-mcp-server.git
 cd docker-mcp-server
 
 # Install dependencies
@@ -31,14 +73,104 @@ npm install
 # or
 pnpm install
 
+# Make CLI aliases executable (Linux/macOS)
+chmod +x bin/basic/*
+chmod +x bin/advanced/*
+
+# Link for local development
+npm link
+```
+
+### Prerequisites
+
+Ensure you have the following installed before using Docker MCP Server:
+
+```bash
+# Check Node.js version (18+ required)
+node --version
+
+# Check Docker installation and daemon status
+docker version
+docker info
+
+# Check package manager
+npm --version
+# or
+pnpm --version
+```
+
+## 🎯 Getting Started
+
+### Quick Start Guide
+
+1. **Install the package:**
+   ```bash
+   npm install -g docker-mcp-server
+   ```
+
+2. **Verify installation:**
+   ```bash
+   dlist --help                 # Show comprehensive command list
+   docker-mcp-server --version  # Check version
+   ```
+
+3. **Try basic operations:**
+   ```bash
+   # Pull and run a container
+   dpull nginx
+   drun -d -p 8080:80 nginx
+   
+   # Check running containers
+   dps
+   
+   # View logs
+   dlogs <container-name>
+   ```
+
+4. **Explore advanced features:**
+   ```bash
+   # Docker Compose operations
+   dcompose up -d               # Start services
+   ddown                        # Stop and remove services
+   
+   # Network management
+   dnetwork create mynet        # Create custom network
+   dbridge inspect mynet        # Inspect bridge network
+   
+   # System maintenance
+   dclean --dry-run             # Preview cleanup
+   dprune images --help         # Learn about image cleanup
+   ```
+
+### MCP Server Integration
+
+If you're using an MCP-compatible environment:
+
+```bash
+# Start MCP server
+node docker-cli.js --mcp-server
+
+# Configure in your MCP client with:
+# Command: node
+# Args: ["/path/to/docker-mcp-server/docker-cli.js", "--mcp-server"]
+```
+# Clone the repository
+git clone <repository-url>
+cd docker-mcp-server
+
+# Install dependencies
+npm install
+
 # Build the project
 npm run build
 
-# Install globally for CLI access everywhere
-npm run install:global
-# or
+# Install globally to enable CLI aliases everywhere
 npm install -g .
+
+# 💡 After global installation, all 24 CLI aliases work from any directory!
 ```
+
+For detailed installation instructions including troubleshooting, see the [Installation Guide](docs/installation-guide.md).
 
 ### Development Installation
 ```bash
@@ -132,77 +264,26 @@ dms help
 ### Individual Bin Scripts
 Each Docker operation has its own executable script (available globally after installation):
 
-#### Basic Operations
+#### 🔥 Quick Start Examples
 ```bash
-# List all available tools
-dlist                  # Show all Docker tools and aliases
+# Show all available tools and examples
+dlist                           # Complete tools overview
 
-# List Docker images
-dimages
+# Basic container operations
+dimages                         # List images
+dps                            # Running containers  
+drun -it --rm ubuntu bash      # Interactive container
+dlogs -f webapp                # Follow logs
 
-# List running containers  
-dps
-
-# List all containers (including stopped)
-dpsa
-
-# Pull an image
-dpull nginx
-
-# Run a container
-drun nginx -p 80:80
-
-# View container logs
-dlogs mycontainer
-
-# Execute command in container
-dexec mycontainer bash
-
-# Build an image
-dbuild ./app --tag=myapp
+# Advanced operations
+dcompose up -d                 # Start services
+dbridge create mynet           # Create bridge network
+dprune deep -f                 # Deep cleanup
 ```
 
-#### Advanced Operations
-```bash
-# Docker Compose operations
-dcompose up
-dup                    # Alias for compose up
-ddown                  # Alias for compose down
-
-# Network management
-dnetwork list
-dnetwork create mynet
-dnetwork remove mynet
-
-# Volume management  
-dvolume list
-dvolume create myvol
-dvolume remove myvol
-
-# Inspect resources
-dinspect container myapp
-dinspect image nginx
-dinspect network mynet
-
-# Cleanup operations
-dprune containers      # Remove stopped containers
-dprune images         # Remove unused images  
-dprune all           # Remove all unused resources
-
-# Registry operations
-dlogin                # Login to Docker Hub
-dlogin myregistry.com # Login to custom registry
-
-# Development workflows
-ddev start            # Start dev containers
-ddev shell myapp      # Open shell in container
-
-# System cleanup
-dclean light          # Light cleanup
-dclean deep           # Deep cleanup
-dstop all             # Stop all containers
-dreset                # Reset Docker environment
-```
+For comprehensive examples and workflows, see:
+- **[Basic Operations Guide](bin/basic/README.md)** - 8 basic Docker aliases with full documentation
+- **[Advanced Operations Guide](bin/advanced/README.md)** - 16 advanced Docker aliases with detailed examples
 
 ## 🏗️ Architecture
 
@@ -260,41 +341,49 @@ docker-mcp-server/
 | `docker-inspect` | Advanced | Inspect Docker objects |
 | `docker-prune` | Advanced | Clean up unused resources |
 | `docker-login` | Advanced | Login to Docker registries |
+| `docker-logout` | Advanced | Logout from Docker registries |
 | `docker-list` | Utility | List all available Docker tools and aliases |
 
 ## 📋 CLI Aliases
 
 ### Available Aliases
-The package provides 22 CLI aliases for quick access:
+The package provides 24 CLI aliases organized into basic and advanced operations:
 
 | Alias | Command | Description |
 |-------|---------|-------------|
 | `docker-mcp-server` | Main CLI | Full CLI wrapper |
 | `dms` | Alias | Short alias for CLI |
-| **Basic Operations** | | |
-| `dimages` | bin/basic/dimages.js | List images |
+| **Basic Operations (8)** | | |
+| `dimages` | bin/basic/dimages.js | List Docker images |
 | `dps` | bin/basic/dps.js | List running containers |
 | `dpsa` | bin/basic/dpsa.js | List all containers |
-| `dpull` | bin/basic/dpull.js | Pull images |
-| `drun` | bin/basic/drun.js | Run containers |
-| `dlogs` | bin/basic/dlogs.js | View logs |
-| `dexec` | bin/basic/dexec.js | Execute commands |
-| `dbuild` | bin/basic/dbuild.js | Build images |
-| **Advanced Operations** | | |
-| `dcompose` | bin/advanced/dcompose.js | Compose operations |
-| `dup` | bin/advanced/dup.js | Compose up |
-| `ddown` | bin/advanced/ddown.js | Compose down |
+| `dpull` | bin/basic/dpull.js | Pull Docker images |
+| `drun` | bin/basic/drun.js | Run containers with full options |
+| `dlogs` | bin/basic/dlogs.js | View container logs |
+| `dexec` | bin/basic/dexec.js | Execute commands in containers |
+| `dbuild` | bin/basic/dbuild.js | Build Docker images |
+| **Advanced Operations (13)** | | |
+| `dcompose` | bin/advanced/dcompose.js | Docker Compose operations |
+| `dup` | bin/advanced/dup.js | Quick compose up |
+| `ddown` | bin/advanced/ddown.js | Quick compose down |
 | `dnetwork` | bin/advanced/dnetwork.js | Network management |
 | `dvolume` | bin/advanced/dvolume.js | Volume management |
-| `dinspect` | bin/advanced/dinspect.js | Inspect resources |
-| `dprune` | bin/advanced/dprune.js | Cleanup operations |
-| `dlogin` | bin/advanced/dlogin.js | Registry login |
+| `dinspect` | bin/advanced/dinspect.js | Inspect Docker objects |
+| `dprune` | bin/advanced/dprune.js | System cleanup operations |
+| `dlogin` | bin/advanced/dlogin.js | Registry login (simplified) |
+| `dlogout` | bin/advanced/dlogout.js | Registry logout |
+| `dbridge` | bin/advanced/dbridge.js | Bridge network management |
 | `ddev` | bin/advanced/ddev.js | Development workflows |
-| `dclean` | bin/advanced/dclean.js | System cleanup |
-| `dstop` | bin/advanced/dstop.js | Stop containers |
-| `dreset` | bin/advanced/dreset.js | Reset environment |
-| **Utility** | | |
+| `dclean` | bin/advanced/dclean.js | Comprehensive system cleanup |
+| `dstop` | bin/advanced/dstop.js | Advanced container stopping |
+| `dreset` | bin/advanced/dreset.js | Environment reset |
+| **Utility (3)** | | |
 | `dlist` | bin/advanced/dlist.js | List all tools and aliases |
+
+### Documentation Links
+- **[Basic Operations](bin/basic/README.md)** - Detailed documentation for all 8 basic aliases
+- **[Advanced Operations](bin/advanced/README.md)** - Comprehensive guide for all 13 advanced aliases
+- **[Command Reference](docs/commands.md)** - Complete syntax and options reference
 
 ## 🔧 Development
 

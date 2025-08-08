@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
   try {
-    const helpFilePath = path.join(__dirname, '..', '..', 'help', 'advanced', 'docker-stop.json');
+    const helpFilePath = path.join(__dirname, '..', '..', 'help', 'advanced', 'docker-bridge.json');
     const helpContent = JSON.parse(fs.readFileSync(helpFilePath, 'utf8'));
     
     console.log(`\n${helpContent.name} - ${helpContent.description}\n`);
@@ -20,12 +20,12 @@ if (args.includes('--help') || args.includes('-h')) {
     
     console.log('Examples:');
     helpContent.examples.forEach(example => {
-      console.log(`  ${example.command.padEnd(40)} # ${example.description}`);
+      console.log(`  ${example.command.padEnd(50)} # ${example.description}`);
     });
     
-    console.log('\nTargeting Options:');
-    helpContent.targeting_options.forEach(option => {
-      console.log(`  ${option}`);
+    console.log('\nActions:');
+    helpContent.actions.forEach(action => {
+      console.log(`  ${action}`);
     });
     
     console.log('\nOptions:');
@@ -33,10 +33,10 @@ if (args.includes('--help') || args.includes('-h')) {
       console.log(`  ${option.flag.padEnd(30)} ${option.description}`);
     });
     
-    if (helpContent.stop_strategies) {
-      console.log('\nStop Strategies:');
-      helpContent.stop_strategies.forEach(strategy => {
-        console.log(`  ${strategy.strategy.padEnd(15)} - ${strategy.description}`);
+    if (helpContent.best_practices) {
+      console.log('\nBest Practices:');
+      helpContent.best_practices.forEach(practice => {
+        console.log(`  ${practice}`);
       });
     }
     
@@ -70,4 +70,9 @@ const child = spawn('node', forwardArgs, {
 
 child.on('exit', (code) => {
   process.exit(code || 0);
+});
+
+child.on('error', (err) => {
+  console.error('Error running docker-cli:', err.message);
+  process.exit(1);
 });

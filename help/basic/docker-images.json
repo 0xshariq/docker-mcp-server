@@ -1,0 +1,72 @@
+{
+  "name": "docker-images",
+  "aliases": ["dimages"],
+  "category": "Basic Image Operations",
+  "description": "List Docker images on the host system with filtering options",
+  "usage": "docker-images [options] [repository]",
+  "examples": [
+    {
+      "command": "dimages",
+      "description": "List all images"
+    },
+    {
+      "command": "dimages --all",
+      "description": "Show all images including intermediate layers"
+    },
+    {
+      "command": "dimages ubuntu",
+      "description": "List images matching 'ubuntu' repository"
+    },
+    {
+      "command": "dimages --filter dangling=true",
+      "description": "List dangling (untagged) images"
+    },
+    {
+      "command": "dimages --help",
+      "description": "Show this help message"
+    }
+  ],
+  "options": [
+    {
+      "flag": "-a, --all",
+      "description": "Show all images (default hides intermediate images)"
+    },
+    {
+      "flag": "--digests",
+      "description": "Show digests"
+    },
+    {
+      "flag": "--no-trunc",
+      "description": "Don't truncate output"
+    },
+    {
+      "flag": "-q, --quiet",
+      "description": "Only show image IDs"
+    },
+    {
+      "flag": "-f, --filter <filter>",
+      "description": "Filter output based on conditions (can be used multiple times)"
+    },
+    {
+      "flag": "--format <format>",
+      "description": "Pretty-print images using a Go template"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "filters": [
+    "dangling=true|false - Show dangling images",
+    "label=<key> or label=<key>=<value> - Filter by label",
+    "before=<image> - Filter images created before given image",
+    "since=<image> - Filter images created since given image",
+    "reference=<pattern> - Filter by reference pattern"
+  ],
+  "notes": [
+    "💡 Use --filter dangling=true to find untagged images for cleanup",
+    "🔧 Combine with 'docker rmi' to remove unused images",
+    "📊 Image sizes shown are the compressed sizes",
+    "⚡ Use -q flag to get image IDs for scripting"
+  ]
+}

@@ -2,6 +2,7 @@
 
 import { spawn } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,7 +14,7 @@ const __dirname = path.dirname(__filename);
  * This CLI provides easy access to all Docker operations through the MCP server.
  * Operations are organized into basic and advanced categories for better usability.
  * 
- * @version 1.0.0
+ * @version 1.9.0
  */
 
 // Available tools in the MCP server
@@ -57,6 +58,8 @@ const WORKFLOW_COMBINATIONS = [
   { alias: 'dinspect', command: 'docker-inspect', description: 'Inspect Docker objects', usage: 'dinspect <type> <id>' },
   { alias: 'dprune', command: 'docker-prune', description: 'Remove unused Docker objects', usage: 'dprune [type]' },
   { alias: 'dlogin', command: 'docker-login', description: 'Login to Docker registry', usage: 'dlogin [registry]' },
+  { alias: 'dlogout', command: 'docker-logout', description: 'Logout from Docker registry', usage: 'dlogout [registry]' },
+  { alias: 'dbridge', command: 'docker-bridge', description: 'Manage Docker bridge networks', usage: 'dbridge <action>' },
   { alias: 'dlist', command: 'docker-list', description: 'List all available tools and aliases', usage: 'dlist' },
   
   // === WORKFLOW COMBINATIONS ===
@@ -178,6 +181,134 @@ class DockerMCPClient {
     console.log('    🖥️  CLI help:            node docker-cli.js list');
     console.log('    🔧 MCP server help:     node docker-cli.js help');
     console.log('');
+  }
+
+  async showToolHelp(toolName) {
+    try {
+      // Try to find help file in different directories
+      const helpDirs = ['basic', 'advanced', 'workflows'];
+      let helpData = null;
+      
+      for (const dir of helpDirs) {
+        try {
+          const helpPath = path.join(__dirname, 'help', dir, `${toolName}.json`);
+          if (fs.existsSync(helpPath)) {
+            const helpContent = fs.readFileSync(helpPath, 'utf8');
+            helpData = JSON.parse(helpContent);
+            break;
+          }
+        } catch (error) {
+          // Continue searching in other directories
+          continue;
+        }
+      }
+      
+      // Fallback: check if it's an alias and find the corresponding command
+      if (!helpData) {
+        const aliasInfo = WORKFLOW_COMBINATIONS.find(t => t.alias === toolName);
+        if (aliasInfo && aliasInfo.command) {
+          return this.showToolHelp(aliasInfo.command);
+        }
+      }
+      
+      if (helpData) {
+        console.log(`\n🔧 ${helpData.name.toUpperCase()}${helpData.aliases ? ` (${helpData.aliases.join(', ')})` : ''}\n`);
+        console.log(`📋 Category: ${helpData.category}`);
+        console.log(`📖 Description: ${helpData.description}`);
+        console.log(`📝 Usage: ${helpData.usage}\n`);
+        
+        // Show examples
+        if (helpData.examples && helpData.examples.length > 0) {
+          console.log('📚 Examples:');
+          helpData.examples.forEach(example => {
+            console.log(`   ${example.command.padEnd(50)} # ${example.description}`);
+          });
+          console.log('');
+        }
+        
+        // Show options
+        if (helpData.options && helpData.options.length > 0) {
+          console.log('⚙️  Options:');
+          helpData.options.forEach(option => {
+            console.log(`   ${option.flag.padEnd(30)} ${option.description}`);
+          });
+          console.log('');
+        }
+        
+        // Show filters (for commands that support them)
+        if (helpData.filters && helpData.filters.length > 0) {
+          console.log('🔍 Available Filters:');
+          helpData.filters.forEach(filter => {
+            console.log(`   ${filter}`);
+          });
+          console.log('');
+        }
+        
+        // Show registries (for registry commands)
+        if (helpData.registries && helpData.registries.length > 0) {
+          console.log('🌐 Supported Registries:');
+          helpData.registries.forEach(registry => {
+            if (typeof registry === 'string') {
+              console.log(`   ${registry}`);
+            } else {
+              console.log(`   ${registry.name.padEnd(25)} ${registry.url.padEnd(30)} ${registry.example || ''}`);
+            }
+          });
+          console.log('');
+        }
+        
+        // Show security info (for sensitive commands)
+        if (helpData.security && helpData.security.length > 0) {
+          console.log('🔒 Security Notes:');
+          helpData.security.forEach(note => {
+            console.log(`   ${note}`);
+          });
+          console.log('');
+        }
+        
+        // Show common commands (for exec-like commands)
+        if (helpData.common_commands && helpData.common_commands.length > 0) {
+          console.log('� Common Commands:');
+          helpData.common_commands.forEach(cmd => {
+            console.log(`   ${cmd}`);
+          });
+          console.log('');
+        }
+        
+        // Show time formats (for time-related commands)
+        if (helpData.time_formats && helpData.time_formats.length > 0) {
+          console.log('⏰ Time Format Examples:');
+          helpData.time_formats.forEach(format => {
+            console.log(`   ${format}`);
+          });
+          console.log('');
+        }
+        
+        // Show notes
+        if (helpData.notes && helpData.notes.length > 0) {
+          console.log('💡 Notes:');
+          helpData.notes.forEach(note => {
+            console.log(`   ${note}`);
+          });
+          console.log('');
+        }
+        
+      } else {
+        // Fallback to generic help
+        console.log(`\n❓ Help not found for: ${toolName}\n`);
+        console.log(`� Available commands:`);
+        console.log(`   📚 Run 'node docker-cli.js list' to see all available tools`);
+        console.log(`   🔧 Run 'node docker-cli.js help' for general help`);
+        console.log(`   📖 Try '${toolName} --help' or check documentation`);
+        console.log('');
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error loading help for ${toolName}:`, error.message);
+      console.log(`\n💡 Fallback help for: ${toolName}`);
+      console.log(`📝 Basic usage: ${toolName} [options]`);
+      console.log(`� Run 'node docker-cli.js list' to see all available tools\n`);
+    }
   }
 
   async callTool(toolName, args = {}) {
@@ -311,7 +442,7 @@ async function main() {
   const knownAliases = [
     'dimages', 'dps', 'dpsa', 'dpull', 'drun', 'dlogs', 'dexec', 'dbuild',
     'dcompose', 'dup', 'ddown', 'dnetwork', 'dvolume', 'dinspect', 'dprune', 
-    'dlogin', 'ddev', 'dclean', 'dstop', 'dreset', 'dlist'
+    'dlogin', 'dlogout', 'dbridge', 'ddev', 'dclean', 'dstop', 'dreset', 'dlist'
   ];
   
   // If called as an alias (either script name or executable name matches an alias)
@@ -347,6 +478,8 @@ async function main() {
     await client.executeWorkflow(actualTool, actualArgs);
     return;
   }
+
+  // ...existing code...
 
   // Check if this is a command alias
   const alias = WORKFLOW_COMBINATIONS.find(combo => combo.alias === actualTool && combo.command);
@@ -385,43 +518,363 @@ function parseDockerArgs(toolName, argsArray) {
   
   switch (toolName) {
     case 'docker-images':
-      if (argsArray[0]) parsedArgs.filter = argsArray[0];
+      // Parse docker images options
+      for (let i = 0; i < argsArray.length; i++) {
+        const arg = argsArray[i];
+        
+        // All images (including intermediate)
+        if (arg === '-a' || arg === '--all') {
+          parsedArgs.all = true;
+        }
+        
+        // Show digests
+        else if (arg === '--digests') {
+          parsedArgs.digests = true;
+        }
+        
+        // No truncate
+        else if (arg === '--no-trunc') {
+          parsedArgs.noTrunc = true;
+        }
+        
+        // Quiet (only IDs)
+        else if (arg === '-q' || arg === '--quiet') {
+          parsedArgs.quiet = true;
+        }
+        
+        // Filter
+        else if ((arg === '-f' || arg === '--filter') && argsArray[i + 1]) {
+          if (!parsedArgs.filter) parsedArgs.filter = [];
+          parsedArgs.filter.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Format output
+        else if (arg === '--format' && argsArray[i + 1]) {
+          parsedArgs.format = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Repository filter (positional argument)
+        else if (!arg.startsWith('-') && !parsedArgs.repository) {
+          parsedArgs.repository = arg;
+        }
+      }
       break;
     
     case 'docker-containers':
-      if (argsArray.includes('--all') || argsArray.includes('-a')) {
-        parsedArgs.all = true;
+      // Parse docker ps/containers options
+      for (let i = 0; i < argsArray.length; i++) {
+        const arg = argsArray[i];
+        
+        // All containers (including stopped)
+        if (arg === '-a' || arg === '--all') {
+          parsedArgs.all = true;
+        }
+        
+        // Latest created
+        else if (arg === '-l' || arg === '--latest') {
+          parsedArgs.latest = true;
+        }
+        
+        // Last n containers
+        else if ((arg === '-n' || arg === '--last') && argsArray[i + 1]) {
+          parsedArgs.last = parseInt(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Quiet (only IDs)
+        else if (arg === '-q' || arg === '--quiet') {
+          parsedArgs.quiet = true;
+        }
+        
+        // No truncate
+        else if (arg === '--no-trunc') {
+          parsedArgs.noTrunc = true;
+        }
+        
+        // Show sizes
+        else if (arg === '-s' || arg === '--size') {
+          parsedArgs.size = true;
+        }
+        
+        // Filter
+        else if ((arg === '-f' || arg === '--filter') && argsArray[i + 1]) {
+          if (!parsedArgs.filter) parsedArgs.filter = [];
+          parsedArgs.filter.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Format output
+        else if (arg === '--format' && argsArray[i + 1]) {
+          parsedArgs.format = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Container filter (positional argument)
+        else if (!arg.startsWith('-') && !parsedArgs.containerFilter) {
+          parsedArgs.containerFilter = arg;
+        }
       }
-      const filterArg = argsArray.find(arg => !arg.startsWith('--'));
-      if (filterArg) parsedArgs.filter = filterArg;
       break;
     
     case 'docker-pull':
-      parsedArgs.imageName = argsArray[0];
+      // First argument should be the image name
+      const pullImageIndex = argsArray.findIndex(arg => !arg.startsWith('-'));
+      if (pullImageIndex !== -1) {
+        parsedArgs.imageName = argsArray[pullImageIndex];
+      }
+      
+      // Parse pull options
+      for (let i = 0; i < argsArray.length; i++) {
+        const arg = argsArray[i];
+        
+        // Skip the image name
+        if (arg === parsedArgs.imageName) continue;
+        
+        // All tags
+        if (arg === '-a' || arg === '--all-tags') {
+          parsedArgs.allTags = true;
+        }
+        
+        // Quiet mode
+        else if (arg === '-q' || arg === '--quiet') {
+          parsedArgs.quiet = true;
+        }
+        
+        // Platform
+        else if (arg === '--platform' && argsArray[i + 1]) {
+          parsedArgs.platform = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Disable content trust
+        else if (arg === '--disable-content-trust') {
+          parsedArgs.disableContentTrust = true;
+        }
+      }
       break;
     
     case 'docker-run':
-      parsedArgs.imageName = argsArray[0];
-      parsedArgs.options = {};
-      
-      // Parse common docker run options
-      if (argsArray.includes('-d') || argsArray.includes('--detach')) {
-        parsedArgs.options.detach = true;
-      }
-      if (argsArray.includes('--rm')) {
-        parsedArgs.options.remove = true;
+      // First argument is always the image name
+      const imageIndex = argsArray.findIndex(arg => !arg.startsWith('-'));
+      if (imageIndex !== -1) {
+        parsedArgs.imageName = argsArray[imageIndex];
       }
       
-      // Parse port mappings
-      const portIndex = argsArray.findIndex(arg => arg === '-p' || arg === '--port');
-      if (portIndex !== -1 && argsArray[portIndex + 1]) {
-        parsedArgs.options.ports = [argsArray[portIndex + 1]];
-      }
-      
-      // Parse name
-      const nameIndex = argsArray.findIndex(arg => arg === '--name');
-      if (nameIndex !== -1 && argsArray[nameIndex + 1]) {
-        parsedArgs.options.name = argsArray[nameIndex + 1];
+      // Parse all docker run options
+      for (let i = 0; i < argsArray.length; i++) {
+        const arg = argsArray[i];
+        
+        // Skip the image name
+        if (arg === parsedArgs.imageName) continue;
+        
+        // Interactive and TTY options
+        if (arg === '-it') {
+          parsedArgs.interactive = true;
+          parsedArgs.tty = true;
+        } else if (arg === '-i' || arg === '--interactive') {
+          parsedArgs.interactive = true;
+        } else if (arg === '-t' || arg === '--tty') {
+          parsedArgs.tty = true;
+        }
+        
+        // Detached mode
+        else if (arg === '-d' || arg === '--detach') {
+          parsedArgs.detach = true;
+        }
+        
+        // Remove container after exit
+        else if (arg === '--rm') {
+          parsedArgs.rm = true;
+        }
+        
+        // Init process
+        else if (arg === '--init') {
+          parsedArgs.init = true;
+        }
+        
+        // Port mappings
+        else if ((arg === '-p' || arg === '--publish') && argsArray[i + 1]) {
+          if (!parsedArgs.ports) parsedArgs.ports = [];
+          parsedArgs.ports.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Publish all ports
+        else if (arg === '-P' || arg === '--publish-all') {
+          parsedArgs.publishAll = true;
+        }
+        
+        // Volume mounts
+        else if ((arg === '-v' || arg === '--volume') && argsArray[i + 1]) {
+          if (!parsedArgs.volumes) parsedArgs.volumes = [];
+          parsedArgs.volumes.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Mount options
+        else if (arg === '--mount' && argsArray[i + 1]) {
+          if (!parsedArgs.mount) parsedArgs.mount = [];
+          parsedArgs.mount.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Tmpfs mounts
+        else if (arg === '--tmpfs' && argsArray[i + 1]) {
+          if (!parsedArgs.tmpfs) parsedArgs.tmpfs = [];
+          parsedArgs.tmpfs.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Environment variables
+        else if ((arg === '-e' || arg === '--env') && argsArray[i + 1]) {
+          if (!parsedArgs.env) parsedArgs.env = [];
+          parsedArgs.env.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Environment file
+        else if (arg === '--env-file' && argsArray[i + 1]) {
+          if (!parsedArgs.envFile) parsedArgs.envFile = [];
+          parsedArgs.envFile.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Container name
+        else if (arg === '--name' && argsArray[i + 1]) {
+          parsedArgs.name = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Working directory
+        else if ((arg === '-w' || arg === '--workdir') && argsArray[i + 1]) {
+          parsedArgs.workdir = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Network
+        else if (arg === '--network' && argsArray[i + 1]) {
+          parsedArgs.network = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Network alias
+        else if (arg === '--network-alias' && argsArray[i + 1]) {
+          if (!parsedArgs.networkAlias) parsedArgs.networkAlias = [];
+          parsedArgs.networkAlias.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // DNS
+        else if (arg === '--dns' && argsArray[i + 1]) {
+          if (!parsedArgs.dns) parsedArgs.dns = [];
+          parsedArgs.dns.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // DNS search
+        else if (arg === '--dns-search' && argsArray[i + 1]) {
+          if (!parsedArgs.dnsSearch) parsedArgs.dnsSearch = [];
+          parsedArgs.dnsSearch.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Hostname
+        else if (arg === '--hostname' && argsArray[i + 1]) {
+          parsedArgs.hostname = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Restart policy
+        else if (arg === '--restart' && argsArray[i + 1]) {
+          parsedArgs.restart = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Memory limit
+        else if ((arg === '-m' || arg === '--memory') && argsArray[i + 1]) {
+          parsedArgs.memory = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Memory swap
+        else if (arg === '--memory-swap' && argsArray[i + 1]) {
+          parsedArgs.memorySwap = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // CPU limits
+        else if (arg === '--cpus' && argsArray[i + 1]) {
+          parsedArgs.cpus = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        else if (arg === '--cpu-shares' && argsArray[i + 1]) {
+          parsedArgs.cpuShares = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // User
+        else if ((arg === '-u' || arg === '--user') && argsArray[i + 1]) {
+          parsedArgs.user = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Privileged mode
+        else if (arg === '--privileged') {
+          parsedArgs.privileged = true;
+        }
+        
+        // Read-only
+        else if (arg === '--read-only') {
+          parsedArgs.readOnly = true;
+        }
+        
+        // Capabilities
+        else if (arg === '--cap-add' && argsArray[i + 1]) {
+          if (!parsedArgs.capAdd) parsedArgs.capAdd = [];
+          parsedArgs.capAdd.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        else if (arg === '--cap-drop' && argsArray[i + 1]) {
+          if (!parsedArgs.capDrop) parsedArgs.capDrop = [];
+          parsedArgs.capDrop.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Security options
+        else if (arg === '--security-opt' && argsArray[i + 1]) {
+          if (!parsedArgs.securityOpt) parsedArgs.securityOpt = [];
+          parsedArgs.securityOpt.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Platform
+        else if (arg === '--platform' && argsArray[i + 1]) {
+          parsedArgs.platform = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Entrypoint
+        else if (arg === '--entrypoint' && argsArray[i + 1]) {
+          parsedArgs.entrypoint = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Labels
+        else if (arg === '--label' && argsArray[i + 1]) {
+          if (!parsedArgs.label) parsedArgs.label = [];
+          parsedArgs.label.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Container command (everything after image that's not an option)
+        else if (!arg.startsWith('-') && arg !== parsedArgs.imageName && i > imageIndex) {
+          parsedArgs.containerCommand = argsArray.slice(i).join(' ');
+          break; // Stop parsing after we find the command
+        }
       }
       break;
     
@@ -445,16 +898,143 @@ function parseDockerArgs(toolName, argsArray) {
       break;
     
     case 'docker-build':
-      parsedArgs.contextPath = argsArray[0];
-      const tagArg = argsArray.find(arg => arg.startsWith('--tag=') || arg.startsWith('-t='));
-      if (tagArg) {
-        parsedArgs.tag = tagArg.split('=')[1];
-      } else {
-        const tagIndex = argsArray.findIndex(arg => arg === '--tag' || arg === '-t');
-        if (tagIndex !== -1 && argsArray[tagIndex + 1]) {
-          parsedArgs.tag = argsArray[tagIndex + 1];
+      // First argument should be the build context (usually .)
+      const buildContextIndex = argsArray.findIndex(arg => !arg.startsWith('-'));
+      if (buildContextIndex !== -1) {
+        parsedArgs.contextPath = argsArray[buildContextIndex];
+      }
+      
+      // Parse build options
+      for (let i = 0; i < argsArray.length; i++) {
+        const arg = argsArray[i];
+        
+        // Skip context path
+        if (arg === parsedArgs.contextPath) continue;
+        
+        // Tag
+        if ((arg === '-t' || arg === '--tag') && argsArray[i + 1]) {
+          if (!parsedArgs.tags) parsedArgs.tags = [];
+          parsedArgs.tags.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Dockerfile
+        else if ((arg === '-f' || arg === '--file') && argsArray[i + 1]) {
+          parsedArgs.dockerfile = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Build args
+        else if (arg === '--build-arg' && argsArray[i + 1]) {
+          if (!parsedArgs.buildArgs) parsedArgs.buildArgs = [];
+          parsedArgs.buildArgs.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Target stage
+        else if (arg === '--target' && argsArray[i + 1]) {
+          parsedArgs.target = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // No cache
+        else if (arg === '--no-cache') {
+          parsedArgs.noCache = true;
+        }
+        
+        // Pull
+        else if (arg === '--pull') {
+          parsedArgs.pull = true;
+        }
+        
+        // Quiet
+        else if (arg === '--quiet' || arg === '-q') {
+          parsedArgs.quiet = true;
+        }
+        
+        // Platform
+        else if (arg === '--platform' && argsArray[i + 1]) {
+          if (!parsedArgs.platform) parsedArgs.platform = [];
+          parsedArgs.platform.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Progress
+        else if (arg === '--progress' && argsArray[i + 1]) {
+          parsedArgs.progress = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Labels
+        else if (arg === '--label' && argsArray[i + 1]) {
+          if (!parsedArgs.label) parsedArgs.label = [];
+          parsedArgs.label.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Memory
+        else if ((arg === '-m' || arg === '--memory') && argsArray[i + 1]) {
+          parsedArgs.memory = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // CPU shares
+        else if (arg === '--cpu-shares' && argsArray[i + 1]) {
+          parsedArgs.cpuShares = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // CPU period
+        else if (arg === '--cpu-period' && argsArray[i + 1]) {
+          parsedArgs.cpuPeriod = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // CPU quota
+        else if (arg === '--cpu-quota' && argsArray[i + 1]) {
+          parsedArgs.cpuQuota = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Compress
+        else if (arg === '--compress') {
+          parsedArgs.compress = true;
+        }
+        
+        // Force remove
+        else if (arg === '--force-rm') {
+          parsedArgs.forceRm = true;
+        }
+        
+        // Remove intermediate containers
+        else if (arg === '--rm') {
+          parsedArgs.rm = true;
+        }
+        
+        // Add host
+        else if (arg === '--add-host' && argsArray[i + 1]) {
+          if (!parsedArgs.addHost) parsedArgs.addHost = [];
+          parsedArgs.addHost.push(argsArray[i + 1]);
+          i++; // Skip next argument
+        }
+        
+        // Network mode
+        else if (arg === '--network' && argsArray[i + 1]) {
+          parsedArgs.network = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Squash
+        else if (arg === '--squash') {
+          parsedArgs.squash = true;
         }
       }
+      
+      // For backward compatibility, also set tag if tags array exists
+      if (parsedArgs.tags && parsedArgs.tags.length > 0) {
+        parsedArgs.tag = parsedArgs.tags[0];
+      }
+      
       break;
     
     case 'docker-compose':
@@ -488,9 +1068,32 @@ function parseDockerArgs(toolName, argsArray) {
       break;
     
     case 'docker-login':
-      if (argsArray[0]) parsedArgs.registryUrl = argsArray[0];
-      if (argsArray[1]) parsedArgs.username = argsArray[1];
-      if (argsArray[2]) parsedArgs.password = argsArray[2];
+      // Parse docker login options
+      for (let i = 0; i < argsArray.length; i++) {
+        const arg = argsArray[i];
+        
+        // Username
+        if ((arg === '-u' || arg === '--username') && argsArray[i + 1]) {
+          parsedArgs.username = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Registry URL (positional argument)
+        else if (!arg.startsWith('-') && !parsedArgs.registry) {
+          parsedArgs.registry = arg;
+        }
+        
+        // Token authentication
+        else if (arg === '--token' && argsArray[i + 1]) {
+          parsedArgs.token = argsArray[i + 1];
+          i++; // Skip next argument
+        }
+        
+        // Interactive mode
+        else if (arg === '--interactive' || arg === '-i') {
+          parsedArgs.interactive = true;
+        }
+      }
       break;
   }
   

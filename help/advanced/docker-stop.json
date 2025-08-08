@@ -1,0 +1,180 @@
+{
+  "name": "docker-stop",
+  "aliases": ["dstop"],
+  "category": "Advanced Container Management",
+  "description": "Advanced container stopping with flexible targeting and batch operations",
+  "usage": "docker-stop [target] [options]",
+  "examples": [
+    {
+      "command": "dstop",
+      "description": "Stop all running containers"
+    },
+    {
+      "command": "dstop my-container",
+      "description": "Stop specific container by name or ID"
+    },
+    {
+      "command": "dstop nginx mysql redis",
+      "description": "Stop multiple containers by name"
+    },
+    {
+      "command": "dstop --pattern 'web-*'",
+      "description": "Stop containers matching pattern"
+    },
+    {
+      "command": "dstop --label env=production",
+      "description": "Stop containers with specific label"
+    },
+    {
+      "command": "dstop --timeout 30",
+      "description": "Stop with custom timeout (30 seconds)"
+    },
+    {
+      "command": "dstop --force",
+      "description": "Force stop (SIGKILL) immediately"
+    },
+    {
+      "command": "dstop --help",
+      "description": "Show this help message"
+    }
+  ],
+  "targeting_options": [
+    "Container Name - Exact container name match",
+    "Container ID - Full or partial container ID",
+    "Pattern Match - Wildcard pattern matching",
+    "Label Filter - Stop containers with specific labels",
+    "Image Filter - Stop containers from specific images",
+    "All Running - Stop all currently running containers"
+  ],
+  "options": [
+    {
+      "flag": "-t, --timeout <seconds>",
+      "description": "Timeout before killing container (default: 10)"
+    },
+    {
+      "flag": "--pattern <pattern>",
+      "description": "Stop containers matching name pattern"
+    },
+    {
+      "flag": "--label <label>",
+      "description": "Stop containers with specific label"
+    },
+    {
+      "flag": "--image <image>",
+      "description": "Stop containers from specific image"
+    },
+    {
+      "flag": "--exclude <name>",
+      "description": "Exclude specific containers from stopping"
+    },
+    {
+      "flag": "--force",
+      "description": "Force stop (SIGKILL) without graceful timeout"
+    },
+    {
+      "flag": "--dry-run",
+      "description": "Show which containers would be stopped"
+    },
+    {
+      "flag": "--wait",
+      "description": "Wait for container to fully stop before returning"
+    },
+    {
+      "flag": "--batch-size <size>",
+      "description": "Stop containers in batches (default: all at once)"
+    },
+    {
+      "flag": "-v, --verbose",
+      "description": "Show detailed stopping progress"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "stop_strategies": [
+    {
+      "strategy": "Graceful Stop",
+      "signal": "SIGTERM",
+      "description": "Send termination signal, wait for timeout",
+      "command": "dstop --timeout 30"
+    },
+    {
+      "strategy": "Force Stop",
+      "signal": "SIGKILL",
+      "description": "Immediately kill container process",
+      "command": "dstop --force"
+    },
+    {
+      "strategy": "Batch Stop",
+      "signal": "SIGTERM",
+      "description": "Stop containers in controlled batches",
+      "command": "dstop --batch-size 5"
+    },
+    {
+      "strategy": "Conditional Stop",
+      "signal": "SIGTERM",
+      "description": "Stop based on labels or patterns",
+      "command": "dstop --label environment=staging"
+    }
+  ],
+  "pattern_examples": [
+    "web-* - All containers starting with 'web-'",
+    "*-service - All containers ending with '-service'",
+    "app-*-prod - Containers matching app-{anything}-prod",
+    "[0-9]* - Containers starting with numbers",
+    "test-* - All test-related containers"
+  ],
+  "label_filtering": [
+    "env=production - Containers with env label set to production",
+    "version!=1.0 - Containers where version is not 1.0",
+    "maintainer=team-a - Containers maintained by team-a",
+    "backup=true - Containers marked for backup",
+    "temporary - Containers with any temporary label"
+  ],
+  "batch_operations": [
+    "🏗️ Infrastructure Services - Stop in dependency order",
+    "📱 Application Tiers - Frontend, API, Database sequence",
+    "🧪 Test Environments - Batch stop test suites",
+    "🔄 Rolling Updates - Gradual container replacement",
+    "🚨 Emergency Shutdown - Coordinated service shutdown"
+  ],
+  "safety_features": [
+    "✅ Dry-run mode prevents accidental stops",
+    "✅ Timeout protection prevents hanging processes",
+    "✅ Exclude filters protect critical containers",
+    "✅ Batch control prevents system overload",
+    "✅ Verbose output shows exactly what's happening"
+  ],
+  "use_cases": [
+    "🔧 Maintenance window preparation",
+    "🚀 Deployment pipeline container cycling",
+    "🧪 Development environment cleanup",
+    "📊 Resource management and optimization",
+    "🚨 Emergency response and system shutdown"
+  ],
+  "automation_examples": [
+    {
+      "use_case": "Maintenance stop",
+      "command": "dstop --label env=staging --timeout 60 --wait",
+      "description": "Graceful stop of staging environment"
+    },
+    {
+      "use_case": "Development cleanup",
+      "command": "dstop --pattern 'dev-*' --exclude dev-database",
+      "description": "Stop dev containers except database"
+    },
+    {
+      "use_case": "Emergency shutdown",
+      "command": "dstop --force --batch-size 3",
+      "description": "Quick shutdown in controlled batches"
+    }
+  ],
+  "notes": [
+    "💡 Default timeout is 10 seconds before SIGKILL",
+    "🔧 Use --dry-run to preview operations safely",
+    "📊 Verbose mode shows container stop progress",
+    "⚡ Force mode bypasses application cleanup routines",
+    "🎯 Pattern matching uses shell-style wildcards"
+  ]
+}

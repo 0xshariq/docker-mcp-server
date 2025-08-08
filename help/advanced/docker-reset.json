@@ -1,0 +1,176 @@
+{
+  "name": "docker-reset",
+  "aliases": ["dreset"],
+  "category": "Advanced System Recovery",
+  "description": "Complete Docker environment reset and system restoration",
+  "usage": "docker-reset [level] [options]",
+  "examples": [
+    {
+      "command": "dreset",
+      "description": "Complete Docker system reset (DESTRUCTIVE)"
+    },
+    {
+      "command": "dreset soft",
+      "description": "Soft reset: containers and networks only"
+    },
+    {
+      "command": "dreset hard",
+      "description": "Hard reset: everything including volumes"
+    },
+    {
+      "command": "dreset containers",
+      "description": "Reset containers only (stop and remove all)"
+    },
+    {
+      "command": "dreset --confirm",
+      "description": "Skip safety confirmation prompts"
+    },
+    {
+      "command": "dreset --backup",
+      "description": "Create backup before reset"
+    },
+    {
+      "command": "dreset --help",
+      "description": "Show this help message"
+    }
+  ],
+  "reset_levels": [
+    {
+      "level": "soft",
+      "description": "Containers, networks, and dangling images",
+      "preserves": "Volumes, custom images, build cache",
+      "risk": "Low - Preserves data and custom work"
+    },
+    {
+      "level": "hard",
+      "description": "Complete system wipe including volumes",
+      "preserves": "Nothing - Fresh Docker installation state",
+      "risk": "CRITICAL - Total data loss"
+    },
+    {
+      "level": "containers",
+      "description": "All containers (running and stopped)",
+      "preserves": "Images, networks, volumes, cache",
+      "risk": "Medium - Application downtime"
+    },
+    {
+      "level": "images",
+      "description": "All images and build cache",
+      "preserves": "Containers, networks, volumes",
+      "risk": "Medium - Rebuild time required"
+    },
+    {
+      "level": "complete",
+      "description": "Everything + Docker daemon restart",
+      "preserves": "Nothing - Complete fresh start",
+      "risk": "MAXIMUM - System-wide reset"
+    }
+  ],
+  "options": [
+    {
+      "flag": "--confirm",
+      "description": "Skip safety confirmation prompts"
+    },
+    {
+      "flag": "--backup",
+      "description": "Create system backup before reset"
+    },
+    {
+      "flag": "--backup-path <path>",
+      "description": "Specify backup location"
+    },
+    {
+      "flag": "--no-restart",
+      "description": "Don't restart Docker daemon"
+    },
+    {
+      "flag": "--preserve <items>",
+      "description": "Preserve specific items (volumes,networks,images)"
+    },
+    {
+      "flag": "--dry-run",
+      "description": "Show what would be reset without doing it"
+    },
+    {
+      "flag": "--restore <backup>",
+      "description": "Restore from previous backup"
+    },
+    {
+      "flag": "-v, --verbose",
+      "description": "Show detailed reset progress"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "backup_features": [
+    "📦 Volume data export to tar archives",
+    "🏗️ Image list and pull commands generation",
+    "🔗 Network configuration backup",
+    "🎯 Container configuration export",
+    "📋 Compose file detection and backup"
+  ],
+  "safety_protocols": [
+    "🛡️ Triple confirmation for hard reset",
+    "💾 Automatic backup creation (unless disabled)",
+    "🔍 Pre-reset environment inspection",
+    "📊 Reset impact assessment and reporting",
+    "🚨 Process interruption safeguards"
+  ],
+  "critical_warnings": [
+    "🚨 DANGER: This operation is IRREVERSIBLE",
+    "💾 ALL DATA will be lost without backup",
+    "🔴 PRODUCTION: Never use without maintenance window",
+    "⏰ DOWNTIME: All containers will be stopped",
+    "🔄 RESTART: May require Docker daemon restart"
+  ],
+  "recovery_procedures": [
+    {
+      "scenario": "Accidental reset",
+      "action": "dreset --restore <backup-id>",
+      "description": "Restore from automatic backup"
+    },
+    {
+      "scenario": "Partial recovery needed",
+      "action": "docker load < backup.tar",
+      "description": "Restore specific images from backup"
+    },
+    {
+      "scenario": "Configuration only",
+      "action": "docker-compose up -d",
+      "description": "Restore services from compose files"
+    }
+  ],
+  "use_cases": [
+    "🧪 Development environment corruption recovery",
+    "🔧 CI/CD pipeline clean slate preparation",
+    "🚀 Production emergency recovery (with proper backups)",
+    "📚 Training environment reset between sessions",
+    "🐛 Debugging mysterious Docker daemon issues"
+  ],
+  "automation_examples": [
+    {
+      "use_case": "Development reset script",
+      "command": "dreset soft --confirm --backup",
+      "description": "Safe reset with automatic backup"
+    },
+    {
+      "use_case": "CI cleanup",
+      "command": "dreset containers --no-restart",
+      "description": "Reset containers without daemon restart"
+    },
+    {
+      "use_case": "Emergency recovery",
+      "command": "dreset hard --backup-path /backup/emergency",
+      "description": "Complete reset with custom backup location"
+    }
+  ],
+  "notes": [
+    "💀 Most destructive operation in docker-mcp-server toolkit",
+    "🔧 Use 'docker system df' to check space before reset",
+    "📊 Reset creates detailed operation log",
+    "⚡ Consider 'docker-clean' for less destructive cleanup",
+    "🎯 Always test reset procedures in development first"
+  ]
+}

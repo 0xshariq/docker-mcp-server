@@ -1,0 +1,139 @@
+{
+  "name": "docker-clean",
+  "aliases": ["dclean"],
+  "category": "Advanced System Maintenance",
+  "description": "Comprehensive Docker environment cleanup and maintenance",
+  "usage": "docker-clean [scope] [options]",
+  "examples": [
+    {
+      "command": "dclean",
+      "description": "Full system cleanup (images, containers, networks, volumes)"
+    },
+    {
+      "command": "dclean containers",
+      "description": "Remove all stopped containers only"
+    },
+    {
+      "command": "dclean images",
+      "description": "Remove all unused images only"
+    },
+    {
+      "command": "dclean dangling",
+      "description": "Remove dangling images and containers only"
+    },
+    {
+      "command": "dclean cache",
+      "description": "Clean build cache and temporary files"
+    },
+    {
+      "command": "dclean --dry-run",
+      "description": "Show what would be cleaned without doing it"
+    },
+    {
+      "command": "dclean --help",
+      "description": "Show this help message"
+    }
+  ],
+  "cleanup_scopes": [
+    "all - Complete system cleanup (default)",
+    "containers - Stopped containers only",
+    "images - Unused and dangling images",
+    "dangling - Dangling images and containers",
+    "networks - Unused networks",
+    "volumes - Unused volumes",
+    "cache - Build cache and temporary files"
+  ],
+  "options": [
+    {
+      "flag": "--dry-run",
+      "description": "Show what would be cleaned without executing"
+    },
+    {
+      "flag": "-f, --force",
+      "description": "Force cleanup without confirmation prompts"
+    },
+    {
+      "flag": "--keep-volumes",
+      "description": "Preserve all volumes during cleanup"
+    },
+    {
+      "flag": "--keep-networks",
+      "description": "Preserve custom networks during cleanup"
+    },
+    {
+      "flag": "--older-than <duration>",
+      "description": "Only clean objects older than duration (24h, 7d, 1w)"
+    },
+    {
+      "flag": "--exclude <pattern>",
+      "description": "Exclude objects matching pattern"
+    },
+    {
+      "flag": "--stats",
+      "description": "Show detailed cleanup statistics"
+    },
+    {
+      "flag": "-v, --verbose",
+      "description": "Show detailed cleanup progress"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "cleanup_levels": [
+    {
+      "level": "Safe",
+      "description": "Removes stopped containers and dangling images",
+      "command": "dclean dangling --dry-run"
+    },
+    {
+      "level": "Standard",
+      "description": "Safe cleanup plus unused images and networks",
+      "command": "dclean --keep-volumes"
+    },
+    {
+      "level": "Aggressive",
+      "description": "Full cleanup including volumes (⚠️ DATA LOSS RISK)",
+      "command": "dclean all --force"
+    }
+  ],
+  "safety_warnings": [
+    "🚨 CRITICAL: --force skips all confirmation prompts",
+    "💾 VOLUMES: May contain important persistent data",
+    "🏗️ IMAGES: May require rebuild time after cleanup",
+    "🔗 NETWORKS: May break running container communication",
+    "⏰ Always run with --dry-run first to preview changes"
+  ],
+  "recovery_tips": [
+    "📋 Use --dry-run to preview before actual cleanup",
+    "💾 Backup important volumes before cleaning",
+    "🏗️ Document custom networks before removal",
+    "📊 Use --stats to track cleanup effectiveness",
+    "🔄 Schedule regular maintenance cleanups"
+  ],
+  "automation_examples": [
+    {
+      "use_case": "Weekly maintenance",
+      "command": "dclean --older-than 7d --keep-volumes --stats",
+      "description": "Clean objects older than 7 days, preserve volumes"
+    },
+    {
+      "use_case": "Development cleanup",
+      "command": "dclean dangling --force",
+      "description": "Quick cleanup of build artifacts"
+    },
+    {
+      "use_case": "CI/CD cleanup",
+      "command": "dclean cache --force",
+      "description": "Clean build cache in automated pipelines"
+    }
+  ],
+  "notes": [
+    "💡 Regular cleanup prevents disk space issues",
+    "🔧 Combines multiple docker prune commands for efficiency",
+    "📊 Shows space reclaimed after each cleanup operation",
+    "⚡ Use during low-activity periods for production systems",
+    "🎯 Customize cleanup scope based on environment needs"
+  ]
+}

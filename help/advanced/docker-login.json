@@ -1,0 +1,85 @@
+{
+  "name": "docker-login",
+  "aliases": ["dlogin"],
+  "category": "Advanced Registry Operations",
+  "description": "Log in to a Docker registry (Docker will prompt for password securely)",
+  "usage": "docker-login [registry] [options]",
+  "examples": [
+    {
+      "command": "dlogin",
+      "description": "Check current login status"
+    },
+    {
+      "command": "dlogin --username myuser",
+      "description": "Login to Docker Hub as myuser"
+    },
+    {
+      "command": "dlogin -u myuser",
+      "description": "Login to Docker Hub as myuser (short flag)"
+    },
+    {
+      "command": "dlogin ghcr.io --username myuser",
+      "description": "Login to GitHub Container Registry"
+    },
+    {
+      "command": "dlogin --token <token>",
+      "description": "Login using token authentication (for CI/CD)"
+    },
+    {
+      "command": "dlogin --help",
+      "description": "Show this help message"
+    }
+  ],
+  "options": [
+    {
+      "flag": "-u, --username <username>",
+      "description": "Username for registry authentication"
+    },
+    {
+      "flag": "--token <token>",
+      "description": "Authentication token (alternative to username/password)"
+    },
+    {
+      "flag": "-i, --interactive",
+      "description": "Force interactive mode"
+    },
+    {
+      "flag": "-h, --help",
+      "description": "Show this help message"
+    }
+  ],
+  "registries": [
+    {
+      "name": "Docker Hub",
+      "url": "docker.io (default)",
+      "example": "dlogin --username myuser"
+    },
+    {
+      "name": "GitHub Container Registry",
+      "url": "ghcr.io",
+      "example": "dlogin ghcr.io --username myuser"
+    },
+    {
+      "name": "Google Container Registry",
+      "url": "gcr.io",
+      "example": "dlogin gcr.io --username _json_key"
+    },
+    {
+      "name": "Amazon ECR",
+      "url": "*.dkr.ecr.*.amazonaws.com",
+      "example": "Use AWS CLI: aws ecr get-login-password"
+    }
+  ],
+  "security": [
+    "🔐 Password is NEVER stored in command history",
+    "🛡️  Docker prompts for password interactively",
+    "🔑 Credentials are stored securely in Docker config",
+    "💡 Use tokens for CI/CD environments"
+  ],
+  "notes": [
+    "💡 Run without arguments to check login status",
+    "🔐 Docker will securely prompt for your password - never pass it as argument",
+    "🔧 Login persists until you run 'docker logout'",
+    "⚡ Required for pushing/pulling private images"
+  ]
+}
