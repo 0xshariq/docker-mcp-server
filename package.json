@@ -1,12 +1,11 @@
 {
   "name": "docker-mcp-server",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
     "docker-mcp-server": "docker-cli.js",
     "dms": "docker-cli.js",
-    
     "dimages": "bin/basic/dimages.js",
     "dps": "bin/basic/dps.js",
     "dpsa": "bin/basic/dpsa.js",
@@ -15,7 +14,6 @@
     "dlogs": "bin/basic/dlogs.js",
     "dexec": "bin/basic/dexec.js",
     "dbuild": "bin/basic/dbuild.js",
-    
     "dcompose": "bin/advanced/dcompose.js",
     "dup": "bin/advanced/dup.js",
     "ddown": "bin/advanced/ddown.js",
