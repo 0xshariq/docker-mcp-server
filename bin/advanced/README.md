@@ -1,6 +1,6 @@
 # Advanced Docker Operations - CLI Aliases
 
-This directory contains 14 powerful Docker operation aliases designed for complex workflows, system management, and production-level Docker operations. Each command provides comprehensive functionality with extensive options and safety features.
+This directory contains 19 powerful Docker operation aliases designed for complex workflows, system management, and production-level Docker operations. Each command provides comprehensive functionality with extensive options and safety features.
 
 ## Overview
 
@@ -12,13 +12,14 @@ Advanced operations provide sophisticated Docker functionality covering the comp
 **🧹 System Maintenance** - Intelligent cleanup, pruning, and system optimization  
 **⚡ Development Workflows** - Specialized tools for development and production environments
 
-**All 14 Advanced Commands:**
+**All 19 Advanced Commands:**
 - `dcompose`, `dup`, `ddown` - Docker Compose orchestration
 - `dnetwork`, `dvolume` - Network and volume management  
 - `dinspect`, `dprune` - System inspection and cleanup
 - `dlogin`, `dlogout`, `dpublish` - Registry authentication and publishing
 - `dbridge`, `ddev`, `dclean` - Specialized workflows
-- `dstop`, `dreset` - Advanced container and system control
+- `dstart`, `dstop`, `drestart`, `drm`, `dreset` - Container lifecycle and system control
+- `dlist` - Tools and aliases reference
 
 **💡 Pro Tips:**
 - Every command supports `--help` or `-h` for comprehensive documentation
@@ -1270,6 +1271,151 @@ dstop all                       # Stop all containers
 dstop pattern:webapp_*          # Stop containers matching pattern
 dstop compose                   # Stop compose containers
 ```
+
+---
+
+### ▶️ `dstart` - Docker Container Start
+
+**Purpose:** Start one or more stopped Docker containers with attachment options and interactive control.
+
+**Command:** `dstart [options] <container...>`
+
+**Parameters:**
+- `<container...>` - Required. One or more container names or IDs to start
+
+**Essential Options:**
+- `-a, --attach` - Attach to the container's STDOUT/STDERR output
+- `-i, --interactive` - Keep STDIN open even if not attached
+- `-h, --help` - Show detailed help information
+
+**Common Use Cases:**
+```bash
+# Basic container starting
+dstart --help                   # Show comprehensive help
+dstart web-app                  # Start single container
+dstart web-app database         # Start multiple containers
+
+# Interactive starting
+dstart -a web-app               # Start and attach to output
+dstart -i -a debug-container    # Start with interactive attachment
+```
+
+**Practical Examples:**
+```bash
+# Development workflow
+dstart dev-db                   # Start development database
+dstart -a web-app               # Start and monitor web application
+dstart frontend backend api     # Start multiple services
+
+# Production operations
+dstart prod-app                 # Start production application
+dstart -a critical-service      # Start and monitor critical service
+```
+
+**Related Commands:** `dstop` (stop containers), `drestart` (restart containers), `dps` (list running)
+**MCP Tool:** `docker-start`
+
+---
+
+### 🔄 `drestart` - Docker Container Restart
+
+**Purpose:** Restart one or more Docker containers with configurable timeout control for graceful shutdown before forced restart.
+
+**Command:** `drestart [options] <container...>`
+
+**Parameters:**
+- `<container...>` - Required. One or more container names or IDs to restart
+
+**Essential Options:**
+- `-t, --time <seconds>` - Seconds to wait for stop before killing (default: 10)
+- `-h, --help` - Show detailed help information
+
+**Common Use Cases:**
+```bash
+# Basic container restarting
+drestart --help                 # Show comprehensive help
+drestart web-app                # Restart single container (10s timeout)
+drestart web-app database       # Restart multiple containers
+
+# Custom timeout control
+drestart -t 30 slow-service     # 30-second graceful shutdown
+drestart -t 5 quick-restart     # Fast restart with 5s timeout
+drestart -t 0 force-restart     # Immediate kill and restart
+```
+
+**Practical Examples:**
+```bash
+# Development workflow
+drestart api-server             # Restart after code changes
+drestart -t 30 database         # Restart database with longer timeout
+drestart frontend backend       # Restart multiple services
+
+# Production maintenance
+drestart -t 60 prod-app         # Production restart with graceful shutdown
+drestart load-balancer          # Restart load balancer
+```
+
+**Safety Features:**
+- Graceful shutdown with configurable timeout
+- Automatic restart after successful stop
+- Multiple container support with individual timeout control
+
+**Related Commands:** `dstart` (start containers), `dstop` (stop containers), `dps` (list status)
+**MCP Tool:** `docker-restart`
+
+---
+
+### 🗑️ `drm` - Docker Container Remove
+
+**Purpose:** Remove one or more Docker containers with options for force removal, volume cleanup, and link management.
+
+**Command:** `drm [options] <container...>`
+
+**Parameters:**
+- `<container...>` - Required. One or more container names or IDs to remove
+
+**Essential Options:**
+- `-f, --force` - Force removal of running containers (stops then removes)
+- `-v, --volumes` - Remove associated anonymous volumes
+- `-l, --link` - Remove the specified link instead of the container
+- `-h, --help` - Show detailed help information
+
+**Common Use Cases:**
+```bash
+# Basic container removal
+drm --help                      # Show comprehensive help
+drm old-container               # Remove stopped container
+drm container1 container2       # Remove multiple containers
+
+# Force removal (running containers)
+drm -f running-app              # Stop and remove running container
+drm -f -v temp-container        # Force remove with volumes
+
+# Volume and link management
+drm -v data-container           # Remove container and its volumes
+drm -l linked-container         # Remove link instead of container
+```
+
+**Practical Examples:**
+```bash
+# Development cleanup
+drm test-container              # Remove test container
+drm -v temp-db                  # Remove database with volumes
+drm -f debug-session            # Force remove debug container
+
+# Production maintenance
+drm -f old-version              # Remove old production container
+drm abandoned-service           # Clean up abandoned service
+drm -v $(dpsa -q -f status=exited)  # Remove all stopped containers
+```
+
+**Safety Warnings:**
+- **`-f` flag stops running containers** - may cause service interruption
+- **`-v` flag removes volumes permanently** - backup important data first
+- **Cannot remove containers with dependent links** - remove links first
+
+**Related Commands:** `dstop` (stop containers), `dps`/`dpsa` (list containers), `dprune` (cleanup)
+**MCP Tool:** `docker-remove`
 
 ---
 
