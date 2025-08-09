@@ -3,71 +3,137 @@
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import fs from 'fs';
+import chalk from 'chalk';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Check if help is requested
+// Enhanced CLI styling using chalk
+const colors = {
+  title: chalk.cyan.bold,
+  command: chalk.cyan,
+  option: chalk.yellow,
+  success: chalk.green,
+  error: chalk.red,
+  warning: chalk.yellow,
+  info: chalk.blue,
+  dim: chalk.gray,
+  white: chalk.white,
+  bright: chalk.bold
+};
+
+const icon = {
+  docker: '🐳',
+  stop: '⏹️',
+  success: '✅',
+  error: '❌',
+  warning: '⚠️'
+};
+
+// Help system with enhanced styling
+const helpArgs = ['--help', '-h'];
+if (process.argv.slice(2).some(arg => helpArgs.includes(arg))) {
+  console.log(`\n${colors.title(`${icon.docker} DSTOP`)} ${colors.dim('- Docker Container Stop Command')}\n`);
+  
+  console.log(`${colors.bright('📋 DESCRIPTION:')}`);
+  console.log(`   Stop one or more running Docker containers gracefully`);
+  
+  console.log(`\n${colors.bright('🔧 USAGE:')}`);
+  console.log(`   ${colors.command('dstop')} ${colors.option('[options]')} ${colors.option('<container...>')}`);
+  
+  console.log(`\n${colors.bright('📝 OPTIONS:')}`);
+  console.log(`   ${colors.option('-h, --help')}         Show this help message`);
+  console.log(`   ${colors.option('-t, --time')} ${colors.white('SECONDS')}   Seconds to wait before killing (default: 10)`);
+  
+  console.log(`\n${colors.bright('💡 EXAMPLES:')}`);
+  console.log(`   ${colors.command('dstop')} ${colors.white('web-app')}                    ${colors.dim('# Stop single container')}`);
+  console.log(`   ${colors.command('dstop')} ${colors.white('web-app database')}          ${colors.dim('# Stop multiple containers')}`);
+  console.log(`   ${colors.command('dstop')} ${colors.option('-t 30')} ${colors.white('web-app')}            ${colors.dim('# Stop with 30s timeout')}`);
+  console.log(`   ${colors.command('dstop')} ${colors.option('--time 0')} ${colors.white('redis')}            ${colors.dim('# Force stop immediately')}`);
+  console.log(`   ${colors.command('dstop')} ${colors.white('$(docker ps -q)')}          ${colors.dim('# Stop all running containers')}`);
+  
+  console.log(`\n${colors.bright('🔄 WORKFLOW:')}`);
+  console.log(`   ${colors.dim('1. Send SIGTERM signal to container processes')}`);
+  console.log(`   ${colors.dim('2. Wait for specified timeout period')}`);
+  console.log(`   ${colors.dim('3. Send SIGKILL if still running after timeout')}`);
+  console.log(`   ${colors.dim('4. Container status changes to "Exited"')}`);
+  
+  console.log(`\n${colors.bright('📊 CONTAINER STATES:')}`);
+  console.log(`   ${colors.dim('• Running → Stopped (Normal stop)')}`);
+  console.log(`   ${colors.dim('• Paused  → Stopped (Also works on paused containers)')}`);
+  console.log(`   ${colors.dim('• Stopped → No change (Already stopped)')}`);
+  
+  console.log(`\n${colors.bright('📚 RELATED COMMANDS:')}`);
+  console.log(`   ${colors.command('dstart')}    - Start stopped containers`);
+  console.log(`   ${colors.command('drestart')}  - Restart containers`);
+  console.log(`   ${colors.command('dps')}       - List running containers`);
+  console.log(`   ${colors.command('dpsa')}      - List all containers`);
+  console.log(`   ${colors.command('drm')}       - Remove stopped containers`);
+  
+  console.log(`\n${colors.dim('💼 MCP Tool: docker-containers')}`);
+  process.exit(0);
+}
+
+// Parse arguments
 const args = process.argv.slice(2);
-if (args.includes('--help') || args.includes('-h')) {
-  try {
-    const helpFilePath = path.join(__dirname, '..', '..', 'help', 'advanced', 'docker-stop.json');
-    const helpContent = JSON.parse(fs.readFileSync(helpFilePath, 'utf8'));
-    
-    console.log(`\n${helpContent.name} - ${helpContent.description}\n`);
-    console.log(`Usage: ${helpContent.usage}\n`);
-    
-    console.log('Examples:');
-    helpContent.examples.forEach(example => {
-      console.log(`  ${example.command.padEnd(40)} # ${example.description}`);
-    });
-    
-    console.log('\nTargeting Options:');
-    helpContent.targeting_options.forEach(option => {
-      console.log(`  ${option}`);
-    });
-    
-    console.log('\nOptions:');
-    helpContent.options.forEach(option => {
-      console.log(`  ${option.flag.padEnd(30)} ${option.description}`);
-    });
-    
-    if (helpContent.stop_strategies) {
-      console.log('\nStop Strategies:');
-      helpContent.stop_strategies.forEach(strategy => {
-        console.log(`  ${strategy.strategy.padEnd(15)} - ${strategy.description}`);
-      });
+const containers = [];
+let timeout = null;
+
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if (arg === '-t' || arg === '--time') {
+    if (i + 1 < args.length && !isNaN(args[i + 1])) {
+      timeout = args[i + 1];
+      i++; // skip next argument
+    } else {
+      console.log(colors.error(`${icon.error} Invalid timeout value`));
+      process.exit(1);
     }
-    
-    if (helpContent.notes) {
-      console.log('\nNotes:');
-      helpContent.notes.forEach(note => {
-        console.log(`  ${note}`);
-      });
-    }
-    
-    process.exit(0);
-  } catch (error) {
-    console.error('Help file not found or invalid');
-    process.exit(1);
+  } else if (!arg.startsWith('-')) {
+    containers.push(arg);
   }
 }
 
-// Get the alias name from the script filename
-const aliasName = path.basename(__filename, '.js');
+// Validate input
+if (containers.length === 0) {
+  console.log(colors.error(`${icon.error} Please specify at least one container name or ID`));
+  console.log(colors.dim(`Usage: ${colors.command('dstop')} ${colors.option('[options]')} ${colors.option('<container>')}`));
+  console.log(colors.dim(`Run '${colors.command('dstop --help')}' for more information`));
+  process.exit(1);
+}
 
-// Path to the main CLI (adjust path based on location)
-const cliPath = path.join(__dirname, '..', '..', 'docker-cli.js');
+// Build docker command
+const dockerArgs = ['stop'];
+if (timeout !== null) {
+  dockerArgs.push('-t', timeout);
+}
+dockerArgs.push(...containers);
 
-// Forward all arguments to the main CLI with the alias name
-const forwardArgs = [cliPath, aliasName, ...args];
+// Execute docker stop command
+console.log(colors.info(`${icon.stop} Stopping container(s): ${colors.white(containers.join(', '))}`));
+if (timeout !== null) {
+  if (timeout === '0') {
+    console.log(colors.warning(`${icon.warning} Force stopping immediately (no graceful shutdown)`));
+  } else {
+    console.log(colors.dim(`Using timeout: ${timeout} seconds`));
+  }
+}
 
-const child = spawn('node', forwardArgs, {
+const child = spawn('docker', dockerArgs, {
   stdio: 'inherit',
   cwd: process.cwd()
 });
 
 child.on('exit', (code) => {
+  if (code === 0) {
+    console.log(colors.success(`${icon.success} Successfully stopped container(s): ${colors.white(containers.join(', '))}`));
+  } else {
+    console.log(colors.error(`${icon.error} Failed to stop container(s)`));
+  }
   process.exit(code || 0);
+});
+
+child.on('error', (error) => {
+  console.log(colors.error(`${icon.error} Error executing docker command: ${error.message}`));
+  process.exit(1);
 });

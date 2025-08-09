@@ -25,8 +25,8 @@
  * • Compose Operations: up, down, build, logs, ps
  * • System Operations: prune, info, version
  * 
- * @author Docker MCP Server Team
- * @version 1.0.0
+ * @author Sharique Chaudhary
+ * @version 2.0.1
  * @license ISC
  */
 
@@ -52,8 +52,16 @@ import {
   dockerLogin,
   dockerLogout,
   dockerBridge,
-  dockerList
-} from "./docker.js";
+  dockerList,
+  dockerPublish,
+  dockerRestart,
+  dockerRemove,
+  dockerStart,
+  dockerStop,
+  dockerClean,
+  dockerDev,
+  dockerReset
+} from "./docker";
 
 // Initialize MCP server with enhanced metadata and capabilities
 const server = new Server({
@@ -318,7 +326,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             }
           },
           required: ["containerId", "command"]
-        } 
+        }
       },
       {
         name: "docker-prune",
@@ -428,6 +436,179 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           }
         }
       },
+      {
+        name: "docker-publish",
+        description: "Pubish the Image to the Docker Hub Registry",
+        inputSchema: {
+          type: "object",
+          properties: {
+            imageName: {
+              type: "string",
+              description: "Name of the Docker image to publish"
+            },
+            tag: {
+              type: "string",
+              description: "Tag to assign to the published image"
+            },
+            registry: {
+              type: "string",
+              description: "Docker registry to publish the image to"
+            }
+          },
+          required: ["imageName", "tag", "registry"]
+        }
+      },
+      {
+        name: "docker-restart",
+        description: "Restart Docker containers with optional timeout",
+        inputSchema: {
+          type: "object",
+          properties: {
+            containers: {
+              type: "array",
+              items: { type: "string" },
+              description: "Array of container names or IDs to restart"
+            },
+            timeout: {
+              type: "number",
+              description: "Optional timeout in seconds before force killing"
+            }
+          },
+          required: ["containers"]
+        }
+      },
+      {
+        name: "docker-remove",
+        description: "Remove Docker containers with options",
+        inputSchema: {
+          type: "object",
+          properties: {
+            containers: {
+              type: "array",
+              items: { type: "string" },
+              description: "Array of container names or IDs to remove"
+            },
+            force: {
+              type: "boolean",
+              description: "Force remove running containers"
+            },
+            volumes: {
+              type: "boolean",
+              description: "Remove associated volumes"
+            }
+          },
+          required: ["containers"]
+        }
+      },
+      {
+        name: "docker-start",
+        description: "Start Docker containers",
+        inputSchema: {
+          type: "object",
+          properties: {
+            containers: {
+              type: "array",
+              items: { type: "string" },
+              description: "Array of container names or IDs to start"
+            },
+            attach: {
+              type: "boolean",
+              description: "Attach to container output"
+            },
+            interactive: {
+              type: "boolean",
+              description: "Keep STDIN open"
+            }
+          },
+          required: ["containers"]
+        }
+      },
+      {
+        name: "docker-stop",
+        description: "Stop Docker containers",
+        inputSchema: {
+          type: "object",
+          properties: {
+            containers: {
+              type: "array",
+              items: { type: "string" },
+              description: "Array of container names or IDs to stop"
+            },
+            timeout: {
+              type: "number",
+              description: "Optional timeout in seconds before force killing"
+            }
+          },
+          required: ["containers"]
+        }
+      },
+      {
+        name: "docker-clean",
+        description: "Clean Docker system with different scopes",
+        inputSchema: {
+          type: "object",
+          properties: {
+            scope: {
+              type: "string",
+              description: "Cleanup scope (all, images, containers, volumes, networks, cache)",
+              enum: ["all", "images", "containers", "volumes", "networks", "cache"]
+            },
+            force: {
+              type: "boolean",
+              description: "Force cleanup without confirmation"
+            },
+            includeAll: {
+              type: "boolean",
+              description: "Include all images, not just dangling ones"
+            }
+          }
+        }
+      },
+      {
+        name: "docker-dev",
+        description: "Development environment management",
+        inputSchema: {
+          type: "object",
+          properties: {
+            command: {
+              type: "string",
+              description: "Development command",
+              enum: ["start", "stop", "restart", "status", "logs", "shell", "rebuild", "clean"]
+            },
+            service: {
+              type: "string",
+              description: "Optional service name for targeted operations"
+            },
+            options: {
+              type: "object",
+              description: "Additional options for the command"
+            }
+          },
+          required: ["command"]
+        }
+      },
+      {
+        name: "docker-reset",
+        description: "Reset Docker system with different levels",
+        inputSchema: {
+          type: "object",
+          properties: {
+            level: {
+              type: "string",
+              description: "Reset level",
+              enum: ["soft", "hard", "nuclear", "factory"]
+            },
+            force: {
+              type: "boolean",
+              description: "Skip confirmation prompts"
+            },
+            keepVolumes: {
+              type: "boolean",
+              description: "Preserve named volumes"
+            }
+          }
+        }
+      }
     ]
   };
 });
@@ -452,7 +633,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return {
           content: [
             {
-              type: "text", 
+              type: "text",
               text: JSON.stringify(await dockerContainers(args))
             }
           ]
@@ -624,6 +805,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
           ]
         };
+
+
+      case "docker-publish":
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(await dockerPublish(args ?? {}))
+            }
+          ]
+        };
+
+      case "docker-restart":
+        return await dockerRestart((args?.containers as string[]) || [], args?.timeout as number);
+
+      case "docker-remove":
+        return await dockerRemove((args?.containers as string[]) || [], args?.force as boolean, args?.volumes as boolean);
+
+      case "docker-start":
+        return await dockerStart((args?.containers as string[]) || [], args?.attach as boolean, args?.interactive as boolean);
+
+      case "docker-stop":
+        return await dockerStop((args?.containers as string[]) || [], args?.timeout as number);
+
+      case "docker-clean":
+        return await dockerClean(args?.scope as string, args?.force as boolean, args?.includeAll as boolean);
+
+      case "docker-dev":
+        return await dockerDev((args?.command as string) || 'status', args?.service as string, args?.options as any);
+
+      case "docker-reset":
+        return await dockerReset(args?.level as string, args?.force as boolean, args?.keepVolumes as boolean);
 
       default:
         throw new Error(`Unknown tool: ${name}`);

@@ -36,660 +36,252 @@ Docker MCP Server is not just another Docker wrapper - it's a complete Docker wo
 
 ## 📦 Installation
 
-### NPM Package Installation (Recommended)
+### Simple Installation (Recommended)
 
-Install Docker MCP Server as a global npm package for system-wide access:
+Install Docker MCP Server globally to use it anywhere on your system:
 
 ```bash
-# Install globally via npm
+# Install with npm
 npm install -g @0xshariq/docker-mcp-server
 
-# Install globally via pnpm (faster)
+# Or install with pnpm (faster)
 pnpm add -g @0xshariq/docker-mcp-server
 
-# Install globally via yarn
-yarn global add @0xshariq/docker-mcp-server
-
-# Verify installation
-@0xshariq/docker-mcp-server --version
+# Verify installation works
+docker-mcp-server --version
+dlist                        # List all available commands
 ```
 
-After global installation, all CLI aliases will be available in your PATH:
-```bash
-# Use anywhere in your system
-drun nginx                    # Run nginx container
-dbuild -t myapp .            # Build image from current directory
-dps                          # List running containers
-dcompose up -d               # Start compose services in background
-```
+That's it! All 25 CLI aliases are now available system-wide.
 
-### Development Installation
+### For Developers
 
-For development or customization:
+If you want to contribute or customize the server:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/docker-mcp-server.git
+# Clone and setup
+git clone https://github.com/0xshariq/docker-mcp-server.git
 cd docker-mcp-server
-
-# Install dependencies
 npm install
-# or
-pnpm install
-
-# Make CLI aliases executable (Linux/macOS)
-chmod +x bin/basic/*
-chmod +x bin/advanced/*
-
-# Link for local development
-npm link
-```
-
-### Prerequisites
-
-Ensure you have the following installed before using Docker MCP Server:
-
-```bash
-# Check Node.js version (18+ required)
-node --version
-
-# Check Docker installation and daemon status
-docker version
-docker info
-
-# Check package manager
-npm --version
-# or
-pnpm --version
-```
-
-## 🎯 Getting Started
-
-### Quick Start Guide
-
-1. **Install the package:**
-   ```bash
-   npm install -g docker-mcp-server
-   ```
-
-2. **Verify installation:**
-   ```bash
-   dlist --help                 # Show comprehensive command list
-   docker-mcp-server --version  # Check version
-   ```
-
-3. **Try basic operations:**
-   ```bash
-   # Pull and run a container
-   dpull nginx
-   drun -d -p 8080:80 nginx
-   
-   # Check running containers
-   dps
-   
-   # View logs
-   dlogs <container-name>
-   ```
-
-4. **Explore advanced features:**
-   ```bash
-   # Docker Compose operations
-   dcompose up -d               # Start services
-   ddown                        # Stop and remove services
-   
-   # Network management
-   dnetwork create mynet        # Create custom network
-   dbridge inspect mynet        # Inspect bridge network
-   
-   # System maintenance
-   dclean --dry-run             # Preview cleanup
-   dprune images --help         # Learn about image cleanup
-   ```
-
-### MCP Server Integration
-
-If you're using an MCP-compatible environment:
-
-```bash
-# Start MCP server
-node docker-cli.js --mcp-server
-
-# Configure in your MCP client with:
-# Command: node
-# Args: ["/path/to/docker-mcp-server/docker-cli.js", "--mcp-server"]
-```
-# Clone the repository
-git clone <repository-url>
-cd docker-mcp-server
-
-# Install dependencies
-npm install
-
-# Build the project
 npm run build
 
-# Install globally to enable CLI aliases everywhere
-npm install -g .
-
-# 💡 After global installation, all 25 CLI aliases work from any directory!
+# Test locally
+npm link                     # Makes commands available globally
+dlist                       # Verify it works
 ```
 
-For detailed installation instructions including troubleshooting, see the [Installation Guide](docs/installation-guide.md).
+### What You Need First
 
-### Development Installation
+Before installing, make sure you have:
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **Docker** - [Install Docker](https://docs.docker.com/get-docker/)
+- **npm** (comes with Node.js)
+
+Check if you have them:
 ```bash
-# For development with hot-reload
-npm run dev
-
-# Or build and test locally
-npm run build
-npm run start
+node --version              # Should show v18 or higher
+docker --version           # Should show Docker version
 ```
 
-### Verify Installation
+## 🚀 Quick Start
+
+### Try It Out
+Once installed, try these commands to see Docker MCP Server in action:
+
 ```bash
-# Test the CLI aliases work globally
-dimages
-dps
+# See all available commands
 dlist
 
-# Test the main CLI
-docker-mcp-server help
-dms help
+# Basic Docker operations
+dps                         # List running containers
+dimages                     # List Docker images
+drun -it ubuntu bash        # Run interactive Ubuntu container
+
+# Advanced operations
+dcompose up -d              # Start Docker Compose services
+dlogin                      # Login to Docker registries
+dpublish myapp:v1.0         # Publish image to registry
 ```
+
+### 📚 Documentation
+
+**Learn More:**
+- **[📖 Basic Commands](bin/basic/README.md)** - 8 essential Docker operations made simple
+- **[⚡ Advanced Commands](bin/advanced/README.md)** - 14 powerful tools for complex workflows
+- **[🔧 MCP Server Setup](docs/mcp-setup.md)** - Connect with Claude Desktop and other MCP clients
+
+## 🎯 What You Get
+
+### Basic Commands (8 aliases)
+Simple, everyday Docker operations that just work:
+- **Container Management**: List, run, stop, and inspect containers
+- **Image Operations**: Pull, build, and manage Docker images  
+- **Logs & Debugging**: View logs and execute commands inside containers
+
+### Advanced Commands (14 aliases)
+Powerful tools for complex Docker workflows:
+- **Multi-Container Apps**: Full Docker Compose integration
+- **Registry Operations**: Secure login and image publishing to Docker Hub, GitHub, AWS, etc.
+- **Network & Storage**: Advanced networking and volume management
+- **System Maintenance**: Intelligent cleanup and environment management
+- **Development Tools**: Specialized workflows for development environments
 
 ## 🔧 MCP Server Setup
 
 ### For Claude Desktop
-
-1. **Locate Claude Desktop Config**:
+1. **Find your Claude config file:**
    - **Linux**: `~/.config/claude-desktop/claude_desktop_config.json`
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-2. **Add Docker MCP Server**:
+2. **Add this to your config:**
    ```json
    {
      "mcpServers": {
        "docker": {
          "command": "node",
-         "args": ["/path/to/docker-mcp-server/dist/index.js"],
-         "cwd": "/path/to/docker-mcp-server"
+         "args": ["/path/to/docker-mcp-server/dist/index.js"]
        }
      }
    }
    ```
 
-3. **For Global Installation**:
-   ```json
-   {
-     "mcpServers": {
-       "docker": {
-         "command": "docker-mcp-server",
-         "args": []
-       }
-     }
-   }
-   ```
-
-4. **Restart Claude Desktop** to load the MCP server.
-
-### For Other MCP Clients
-
-The server can be used with any MCP-compatible client by connecting to:
-- **Command**: `node dist/index.js` (local) or `docker-mcp-server` (global)
-- **Protocol**: Model Context Protocol (stdio transport)
-- **Working Directory**: Project root directory
-
-## 🛠️ Usage
-
-### MCP Server
-The server runs as a Model Context Protocol server, exposing Docker operations to MCP clients:
-
-```bash
-# Start the MCP server
-npm run start
-
-# Start with inspector for debugging
-npm run inspect
-```
+3. **Restart Claude Desktop** and you'll see Docker tools available!
 
 ### Universal Startup Script
-For MCP client integration, use the universal startup script that handles environment setup automatically:
+Use our startup script for automatic setup with any MCP client:
 
 ```bash
-# Universal startup script (recommended for MCP clients)
-./start-mcp.sh                  # Start with automatic environment setup
-./start-mcp.sh --verbose        # Start with verbose logging
-./start-mcp.sh --dev            # Start in development mode
-./start-mcp.sh --help           # Show all options
-
-# Compatible with all MCP clients:
-# - Claude Desktop (Anthropic)
-# - Cursor IDE 
-# - Continue (VS Code Extension)
-# - Open WebUI
-# - Any MCP-compatible client
+./start-mcp.sh              # Automatic environment setup
+./start-mcp.sh --help       # See all options
 ```
 
-The startup script automatically:
-- ✅ Sets up Node.js environment with fnm
-- ✅ Validates Docker daemon connectivity  
-- ✅ Builds the project if needed
-- ✅ Handles environment variables
-- ✅ Provides detailed logging
+**Compatible with:** Claude Desktop, Cursor IDE, Continue (VS Code), Open WebUI, and more!
 
-### CLI Wrapper
-Use the comprehensive CLI wrapper for quick Docker operations:
+## 🏗️ Project Structure
 
-```bash
-# Show help and available commands
-docker-mcp-server help
-
-# Or use the short alias
-dms help
-```
-
-### Individual Bin Scripts
-Each Docker operation has its own executable script (available globally after installation):
-
-#### 🔥 Quick Start Examples
-```bash
-# Show all available tools and examples
-dlist                           # Complete tools overview
-
-# Basic container operations
-dimages                         # List images
-dps                            # Running containers  
-drun -it --rm ubuntu bash      # Interactive container
-dlogs -f webapp                # Follow logs
-
-# Advanced operations
-dcompose up -d                 # Start services
-dbridge create mynet           # Create bridge network
-dprune deep -f                 # Deep cleanup
-```
-
-For comprehensive examples and workflows, see:
-- **[Basic Operations Guide](bin/basic/README.md)** - 8 basic Docker aliases with full documentation
-- **[Advanced Operations Guide](bin/advanced/README.md)** - 16 advanced Docker aliases with detailed examples
-
-## 🏗️ Architecture
-
-### Project Structure
 ```
 docker-mcp-server/
-├── src/
-│   ├── index.ts          # MCP server entry point
-│   └── docker.ts         # Docker operations module
-├── bin/
-│   ├── docker-mcp-helper.js  # Shared utility for bin scripts
-│   ├── basic/            # Basic Docker operation scripts
-│   │   ├── dimages.js
-│   │   ├── dps.js
-│   │   ├── dpsa.js
-│   │   ├── dpull.js
-│   │   ├── drun.js
-│   │   ├── dlogs.js
-│   │   ├── dexec.js
-│   │   └── dbuild.js
-│   └── advanced/         # Advanced Docker operation scripts
-│       ├── dcompose.js
-│       ├── dup.js
-│       ├── ddown.js
-│       ├── dnetwork.js
-│       ├── dvolume.js
-│       ├── dinspect.js
-│       ├── dprune.js
-│       ├── dlogin.js
-│       ├── dpublish.js   # NEW: Image publishing to registries
-│       ├── ddev.js
-│       ├── dclean.js
-│       ├── dstop.js
-│       └── dreset.js
-├── help/                 # JSON help files for all commands
-│   ├── basic/
-│   └── advanced/
-├── docker-cli.js         # Main CLI wrapper
+├── src/                    # TypeScript source code
+├── bin/                    # CLI alias scripts
+│   ├── basic/             # 8 basic Docker operations
+│   └── advanced/          # 14 advanced Docker operations  
+├── help/                  # Documentation for all commands
 ├── start-mcp.sh          # Universal MCP server startup script
-├── dist/                 # Compiled TypeScript output
-├── package.json
-├── tsconfig.json
-└── README.md
+├── docker-cli.js         # Main CLI wrapper
+└── dist/                 # Compiled JavaScript output
 ```
 
-### MCP Tools Available
+**📚 Complete Documentation:**
+- **[Basic Commands Reference](bin/basic/README.md)** - 8 essential Docker operations
+- **[Advanced Commands Reference](bin/advanced/README.md)** - 14 powerful workflow tools
+- **[All Available Commands](docs/commands.md)** - Complete syntax and examples
 
-| Tool | Category | Description |
-|------|----------|-------------|
-| `docker-images` | Basic | List Docker images |
-| `docker-containers` | Basic | List Docker containers |
-| `docker-pull` | Basic | Pull Docker images |
-| `docker-run` | Basic | Run Docker containers |
-| `docker-logs` | Basic | View container logs |
-| `docker-exec` | Basic | Execute commands in containers |
-| `docker-build` | Basic | Build Docker images |
-| `docker-compose` | Advanced | Docker Compose operations |
-| `docker-network` | Advanced | Manage Docker networks |
-| `docker-volume` | Advanced | Manage Docker volumes |
-| `docker-inspect` | Advanced | Inspect Docker objects |
-| `docker-prune` | Advanced | Clean up unused resources |
-| `docker-login` | Advanced | Login to Docker registries |
-| `docker-logout` | Advanced | Logout from Docker registries |
-| `docker-list` | Utility | List all available Docker tools and aliases |
+## ⚡ All Available Commands
 
-## 📋 CLI Aliases
+### Basic Operations (8 commands)
+Essential Docker operations for daily use:
+- `dimages`, `dps`, `dpsa`, `dpull`, `drun`, `dlogs`, `dexec`, `dbuild`
 
-### Available Aliases
-The package provides 25 CLI aliases organized into basic and advanced operations:
+### Advanced Operations (14 commands)  
+Powerful tools for complex workflows:
+- `dcompose`, `dup`, `ddown`, `dnetwork`, `dvolume`, `dinspect`, `dprune`
+- `dlogin`, `dlogout`, `dpublish`, `dbridge`, `ddev`, `dclean`, `dstop`, `dreset`
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `docker-mcp-server` | Main CLI | Full CLI wrapper |
-| `dms` | Alias | Short alias for CLI |
-| **Basic Operations (8)** | | |
-| `dimages` | bin/basic/dimages.js | List Docker images |
-| `dps` | bin/basic/dps.js | List running containers |
-| `dpsa` | bin/basic/dpsa.js | List all containers |
-| `dpull` | bin/basic/dpull.js | Pull Docker images |
-| `drun` | bin/basic/drun.js | Run containers with full options |
-| `dlogs` | bin/basic/dlogs.js | View container logs |
-| `dexec` | bin/basic/dexec.js | Execute commands in containers |
-| `dbuild` | bin/basic/dbuild.js | Build Docker images |
-| **Advanced Operations (14)** | | |
-| `dcompose` | bin/advanced/dcompose.js | Docker Compose operations |
-| `dup` | bin/advanced/dup.js | Quick compose up |
-| `ddown` | bin/advanced/ddown.js | Quick compose down |
-| `dnetwork` | bin/advanced/dnetwork.js | Network management |
-| `dvolume` | bin/advanced/dvolume.js | Volume management |
-| `dinspect` | bin/advanced/dinspect.js | Inspect Docker objects |
-| `dprune` | bin/advanced/dprune.js | System cleanup operations |
-| `dlogin` | bin/advanced/dlogin.js | Secure registry login |
-| `dlogout` | bin/advanced/dlogout.js | Registry logout |
-| `dpublish` | bin/advanced/dpublish.js | Publish images to registries |
-| `dbridge` | bin/advanced/dbridge.js | Bridge network management |
-| `ddev` | bin/advanced/ddev.js | Development workflows |
-| `dclean` | bin/advanced/dclean.js | Comprehensive system cleanup |
-| `dstop` | bin/advanced/dstop.js | Advanced container stopping |
-| `dreset` | bin/advanced/dreset.js | Environment reset |
-| **Utility (3)** | | |
-| `dlist` | bin/advanced/dlist.js | List all tools and aliases |
+### Utility Commands (3 commands)
+- `docker-mcp-server`, `dms`, `dlist`
 
-### Documentation Links
-- **[Basic Operations](bin/basic/README.md)** - Detailed documentation for all 8 basic aliases
-- **[Advanced Operations](bin/advanced/README.md)** - Comprehensive guide for all 13 advanced aliases
-- **[Command Reference](docs/commands.md)** - Complete syntax and options reference
+**📖 See detailed documentation:** Use `dlist` command or check the README files linked above.
 
 ## 🔧 Development
 
-### Scripts
+### For Contributors
 ```bash
-# Build TypeScript
-npm run build
+# Setup development environment
+git clone https://github.com/0xshariq/docker-mcp-server.git
+cd docker-mcp-server
+npm install
 
-# Start the MCP server
-npm run start
-
-# Development mode (watch + restart)
-npm run dev
-
-# Build and start
-npm run dev:build
-
-# Debug with MCP inspector
-npm run inspect
-
-# Clean build artifacts
-npm run clean
-
-# Test CLI
-npm run cli
-npm run cli:help
-
-# Install globally for system-wide access
-npm run install:global
-
-# Uninstall global installation
-npm run uninstall:global
-```
-
-### TypeScript Configuration
-The project uses ES2022 target with ESNext modules for modern Node.js compatibility:
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
-  }
-}
+# Development commands
+npm run dev                 # Build and watch for changes
+npm run build              # Build TypeScript
+npm run start              # Start MCP server
+npm run clean              # Clean build files
 ```
 
 ## 🧪 Testing
 
-### Verify Installation
+### Quick Test
 ```bash
-# Test global CLI installation
-which docker-mcp-server
-which dimages
-which dlist
-
-# Test CLI wrapper
-docker-mcp-server help
-dms help
-
-# Test basic operations
-dimages
-dps
-dlist
-
-# Test advanced operations  
-dnetwork list
-dvolume list
-
-# Test MCP server
-npm run start
+# After installation, test these commands
+dlist                      # Should show all 25 commands
+dps                        # Should list containers
+dimages                    # Should list images
 ```
 
-### Verify MCP Server in Claude Desktop
-1. Restart Claude Desktop after configuration
-2. Look for Docker tools in the MCP section
-3. Try asking Claude: "List my Docker containers"
-4. Verify all 14 tools are available
-
-### Example Workflows
+### Test MCP Integration
 ```bash
-# Development workflow
-dbuild ./app --tag=myapp      # Build image
-drun myapp -p 3000:3000       # Run container
-dlogs myapp                   # Check logs
-dexec myapp bash              # Debug container
-
-# Information gathering
-dlist                         # List all available commands
-dimages                       # See available images
-dps                           # Check running containers
-
-# Cleanup workflow
-dstop all                     # Stop all containers
-dprune containers            # Remove stopped containers
-dprune images                # Remove unused images
-dclean deep                  # Deep cleanup
+./start-mcp.sh             # Should start without errors
 ```
 
-## 🔒 Security Notes
+## 🆘 Common Issues
 
-- The server executes Docker commands with the same permissions as the running user
-- Ensure proper Docker daemon security configuration
-- Consider running in restricted environments for production use
-- All Docker operations have timeout protection (30 seconds default)
-
-## � Troubleshooting
-
-### Common Issues
-
-#### 1. "Command not found" after global installation
+### "Command not found"
 ```bash
-# Verify npm global bin path is in PATH
-npm config get prefix
-echo $PATH
+# Make sure npm global bin is in your PATH
+echo $PATH | grep $(npm config get prefix)
 
-# If missing, add to your shell profile (.bashrc, .zshrc, etc.):
+# If not found, add this to ~/.bashrc or ~/.zshrc:
 export PATH="$(npm config get prefix)/bin:$PATH"
-
-# Reload shell or run:
-source ~/.bashrc  # or ~/.zshrc
 ```
 
-#### 2. Docker daemon not running
+### "Docker daemon not running"
 ```bash
 # Check Docker status
-docker version
 docker info
 
-# Start Docker daemon (Linux)
+# Start Docker (Linux)
 sudo systemctl start docker
 
 # Start Docker Desktop (macOS/Windows)
-# Launch Docker Desktop application
+# Launch the Docker Desktop app
 ```
 
-#### 3. Permission denied errors
+### "Permission denied"
 ```bash
-# Add user to docker group (Linux)
+# Add yourself to docker group (Linux)
 sudo usermod -aG docker $USER
 # Then logout and login again
-
-# Or run with sudo (not recommended)
-sudo dimages
 ```
 
-#### 4. MCP Server not appearing in Claude Desktop
-```bash
-# Check config file location and syntax
-# Linux: ~/.config/claude-desktop/claude_desktop_config.json
-# macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
-# Windows: %APPDATA%\Claude\claude_desktop_config.json
+**📋 More Help:** 
+- Check `dlist --help` for all commands
+- See [Troubleshooting Guide](docs/troubleshooting.md) for detailed solutions
 
-# Verify JSON syntax:
-cat ~/.config/claude-desktop/claude_desktop_config.json | jq .
+---
 
-# Check server can start:
-node dist/index.js
-
-# Restart Claude Desktop completely
-```
-
-#### 5. Build errors
-```bash
-# Clear cache and rebuild
-npm run clean
-rm -rf node_modules dist
-npm install
-npm run build
-
-# Check Node.js version
-node --version  # Should be 18+
-```
-
-#### 6. TypeScript compilation errors
-```bash
-# Check TypeScript installation
-npx tsc --version
-
-# Reinstall dependencies
-rm -rf node_modules package-lock.json
-npm install
-
-# Check for conflicting TypeScript versions
-npm list typescript
-```
-
-### Platform-Specific Notes
-
-#### Linux
-- Ensure Docker daemon is running: `sudo systemctl status docker`
-- Add user to docker group to avoid sudo: `sudo usermod -aG docker $USER`
-- PATH issues: Add npm global bin to PATH in `.bashrc` or `.zshrc`
-
-#### macOS
-- Install Docker Desktop from official website
-- Ensure Docker Desktop is running before using tools
-- Use Homebrew for Node.js: `brew install node`
-
-#### Windows
-- Install Docker Desktop for Windows
-- Use PowerShell or Command Prompt
-- Ensure Windows Subsystem for Linux (WSL2) is configured for Docker
-- Use Windows Terminal for better command-line experience
-
-### Getting Help
-
-1. **Check Docker Status**: `docker version && docker info`
-2. **Verify Installation**: `which docker-mcp-server && dlist`
-3. **Check Logs**: Run commands with `--verbose` or check terminal output
-4. **Test MCP Server**: `npm run start` to see if server starts properly
-5. **Validate Configuration**: Ensure Claude Desktop config is valid JSON
-
-If problems persist, please create an issue with:
-- Operating system and version
-- Node.js version (`node --version`)
-- Docker version (`docker --version`)
-- Complete error message
-- Steps to reproduce
-
-## �📄 License
+## 📄 License
 
 ISC License
 
 ## 👨‍💻 Author
 
-Sharique Chaudhary
+**Sharique Chaudhary** ([@0xshariq](https://github.com/0xshariq))
 
 ## 🤝 Contributing
 
+Contributions welcome! Please:
 1. Fork the repository
-2. Create a feature branch
-3. Make changes and test thoroughly
+2. Create a feature branch  
+3. Test your changes
 4. Submit a pull request
 
-## 📞 Support
+## 🔗 Links
 
-For issues and questions:
-
-### Quick Diagnostics
-```bash
-# Basic system check
-node --version                    # Should be 18+
-docker --version                  # Verify Docker installed
-docker info                       # Check Docker daemon
-which docker-mcp-server          # Verify global installation
-dlist                            # Test basic functionality
-```
-
-### Common Solutions
-- **Docker daemon issues**: Ensure Docker is running (`docker info`)
-- **Permission errors**: Add user to docker group (Linux) or check Docker Desktop (macOS/Windows)
-- **Command not found**: Verify npm global bin path is in your shell's PATH
-- **MCP not working**: Check Claude Desktop config file syntax and restart the application
-- **Build errors**: Clear cache with `npm run clean` and rebuild
-
-### Reporting Issues
-When reporting bugs, please include:
-- Operating system and version
-- Node.js version output
-- Docker version output  
-- Complete error message
-- Steps to reproduce the issue
+- **[GitHub Repository](https://github.com/0xshariq/docker-mcp-server)**
+- **[NPM Package](https://www.npmjs.com/package/@0xshariq/docker-mcp-server)**
+- **[Issues & Support](https://github.com/0xshariq/docker-mcp-server/issues)**
 
 ---
 
-**Note**: This MCP server follows the Model Context Protocol specification and provides a comprehensive Docker interface compatible with Claude Desktop and other MCP clients.
+**✨ Docker MCP Server** - Making Docker workflows simple and powerful for everyone!

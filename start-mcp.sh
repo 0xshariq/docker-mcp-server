@@ -79,9 +79,37 @@ validate_environment() {
         error "Docker not found in PATH. Docker is required for this MCP server."
     fi
     
-    # Check Docker daemon
+    # Check Docker daemon with auto-start attempt
     if ! docker info >/dev/null 2>&1; then
-        error "Docker daemon is not running. Please start Docker."
+        log "Docker daemon is not running. Attempting to start Docker..."
+        
+        # Try different methods to start Docker based on the system
+        if command -v systemctl >/dev/null 2>&1; then
+            log "Attempting to start Docker via systemctl..."
+            if sudo systemctl start docker 2>/dev/null; then
+                log "Docker service started successfully via systemctl"
+                sleep 3  # Give Docker time to fully initialize
+            fi
+        elif command -v service >/dev/null 2>&1; then
+            log "Attempting to start Docker via service command..."
+            if sudo service docker start 2>/dev/null; then
+                log "Docker service started successfully via service command"
+                sleep 3  # Give Docker time to fully initialize
+            fi
+        elif command -v brew >/dev/null 2>&1; then
+            log "Detected macOS. Please start Docker Desktop manually."
+            log "You can start it from Applications or run: open -a Docker"
+        fi
+        
+        # Check again after start attempts
+        if ! docker info >/dev/null 2>&1; then
+            error "Docker daemon is still not running. Please start Docker manually:
+    - Linux: sudo systemctl start docker
+    - macOS: Open Docker Desktop from Applications
+    - Windows: Start Docker Desktop"
+        else
+            log "Docker daemon is now running successfully"
+        fi
     fi
     
     log "Environment validation completed"
@@ -131,6 +159,9 @@ start_mcp_server() {
     
     # Docker-specific environment variables
     export DOCKER_HOST="${DOCKER_HOST:-unix:///var/run/docker.sock}"
+    
+    # Add Docker CLI aliases to PATH for development
+    export PATH="$PROJECT_DIR/bin/basic:$PROJECT_DIR/bin/advanced:$PATH"
     
     # Start the MCP server
     log "Executing: node $DIST_FILE"

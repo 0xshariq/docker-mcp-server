@@ -1627,6 +1627,129 @@ export async function dockerBridge(params: any): Promise<DockerOperationResult> 
 }
 
 /**
+ * Publishes a Docker image to a registry with comprehensive options
+ * @param imageName - The name of the Docker image to publish
+ * @param options - Publishing options including tags, registry, platform, etc.
+ */
+export async function dockerPublish(imageName: string, options: {
+  tags?: string[];
+  registry?: string;
+  platform?: string;
+  pushAllTags?: boolean;
+  dryRun?: boolean;
+  force?: boolean;
+  quiet?: boolean;
+} = {}): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+
+  try {
+    const { 
+      tags = ['latest'], 
+      registry = 'docker.io', 
+      platform, 
+      pushAllTags = false,
+      dryRun = false,
+      force = false,
+      quiet = false
+    } = options;
+
+    // Validate image name format
+    if (!imageName || imageName.trim() === '') {
+      throw new Error('Image name is required');
+    }
+
+    // Build the full image name with registry prefix if not already included
+    const fullImageName = imageName.includes('/') ? imageName : imageName;
+    const registryPrefix = registry !== 'docker.io' ? `${registry}/` : '';
+    
+    let results: string[] = [];
+    
+    if (dryRun) {
+      results.push('🔍 DRY RUN - Commands that would be executed:');
+      for (const tag of tags) {
+        const publishImage = `${registryPrefix}${fullImageName}:${tag}`;
+        results.push(`  docker push ${publishImage}`);
+        if (platform) {
+          results.push(`    --platform ${platform}`);
+        }
+      }
+      if (pushAllTags) {
+        results.push(`  docker push --all-tags ${registryPrefix}${fullImageName}`);
+      }
+      
+      return createResponse('docker-publish', results.join('\n'), false, process.cwd(), startTime);
+    }
+
+    // Check Docker authentication status
+    try {
+      const authCommand = `docker system info`;
+      await executeDockerCommand(authCommand);
+    } catch (error) {
+      throw new Error('Docker daemon is not running or accessible');
+    }
+
+    // Publish each tag
+    for (const tag of tags) {
+      const publishImage = `${registryPrefix}${fullImageName}:${tag}`;
+      
+      // Tag the image for the target registry if needed
+      if (registryPrefix) {
+        const tagCommand = `docker tag ${imageName} ${publishImage}`;
+        if (!quiet) results.push(`🏷️  Tagging: ${tagCommand}`);
+        await executeDockerCommand(tagCommand);
+      }
+      
+      // Build push command
+      let pushCommand = `docker push ${publishImage}`;
+      if (platform) {
+        pushCommand = `docker push --platform ${platform} ${publishImage}`;
+      }
+      if (quiet) {
+        pushCommand += ' --quiet';
+      }
+      
+      if (!quiet) results.push(`📤 Pushing: ${pushCommand}`);
+      
+      const pushResult = await executeDockerCommand(pushCommand);
+      results.push(`✅ Successfully pushed ${publishImage}`);
+      
+      if (!quiet && pushResult.stdout) {
+        results.push(pushResult.stdout);
+      }
+    }
+
+    // Push all tags if requested
+    if (pushAllTags) {
+      const pushAllCommand = `docker push --all-tags ${registryPrefix}${fullImageName}`;
+      if (!quiet) results.push(`📤 Pushing all tags: ${pushAllCommand}`);
+      
+      const pushAllResult = await executeDockerCommand(pushAllCommand);
+      results.push(`✅ Successfully pushed all tags for ${registryPrefix}${fullImageName}`);
+      
+      if (!quiet && pushAllResult.stdout) {
+        results.push(pushAllResult.stdout);
+      }
+    }
+
+    const summary = [
+      `🎉 Docker Publish Complete!`,
+      `📦 Image: ${fullImageName}`,
+      `🏷️  Tags: ${tags.join(', ')}`,
+      `🌐 Registry: ${registry}`,
+      platform ? `🖥️  Platform: ${platform}` : '',
+      `⏱️  Duration: ${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+      '',
+      '📋 Published Images:',
+      ...tags.map(tag => `  • ${registryPrefix}${fullImageName}:${tag}`)
+    ].filter(Boolean);
+
+    return createResponse('docker-publish', [...summary, '', ...results].join('\n'), false, process.cwd(), startTime);
+  } catch (error: any) {
+    return createResponse('docker-publish', `❌ Publish failed: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
  * Lists all available Docker MCP tools and CLI aliases
  * Provides a comprehensive overview of available commands and their usage
  * 
@@ -1786,5 +1909,299 @@ Available in Claude Desktop and other MCP clients:
     
   } catch (error: any) {
     return createResponse('docker-list', `Error listing tools: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Restart Docker containers with optional timeout
+ * @param containers Array of container names or IDs
+ * @param timeout Optional timeout in seconds
+ */
+export async function dockerRestart(containers: string[], timeout?: number): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    if (!containers || containers.length === 0) {
+      return createResponse('docker-restart', 'Error: Please specify at least one container', true, process.cwd(), startTime);
+    }
+
+    const args = ['restart'];
+    if (timeout !== undefined) {
+      args.push('-t', timeout.toString());
+    }
+    args.push(...containers);
+
+    const { stdout, stderr } = await execAsync(`docker ${args.join(' ')}`, { 
+      timeout: DEFAULT_TIMEOUT,
+      cwd: process.cwd() 
+    });
+
+    const message = `🔄 Successfully restarted container(s): ${containers.join(', ')}\n${stdout}${stderr}`;
+    return createResponse('docker-restart', message.trim(), false, process.cwd(), startTime);
+
+  } catch (error: any) {
+    return createResponse('docker-restart', `Error restarting containers: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Remove Docker containers with options
+ * @param containers Array of container names or IDs  
+ * @param force Force remove running containers
+ * @param volumes Remove associated volumes
+ */
+export async function dockerRemove(containers: string[], force?: boolean, volumes?: boolean): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    if (!containers || containers.length === 0) {
+      return createResponse('docker-remove', 'Error: Please specify at least one container', true, process.cwd(), startTime);
+    }
+
+    const args = ['rm'];
+    if (force) args.push('-f');
+    if (volumes) args.push('-v');
+    args.push(...containers);
+
+    const { stdout, stderr } = await execAsync(`docker ${args.join(' ')}`, { 
+      timeout: DEFAULT_TIMEOUT,
+      cwd: process.cwd() 
+    });
+
+    const message = `🗑️ Successfully removed container(s): ${containers.join(', ')}\n${stdout}${stderr}`;
+    return createResponse('docker-remove', message.trim(), false, process.cwd(), startTime);
+
+  } catch (error: any) {
+    return createResponse('docker-remove', `Error removing containers: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Start Docker containers
+ * @param containers Array of container names or IDs
+ * @param attach Attach to container output
+ * @param interactive Keep STDIN open
+ */
+export async function dockerStart(containers: string[], attach?: boolean, interactive?: boolean): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    if (!containers || containers.length === 0) {
+      return createResponse('docker-start', 'Error: Please specify at least one container', true, process.cwd(), startTime);
+    }
+
+    const args = ['start'];
+    if (attach) args.push('-a');
+    if (interactive) args.push('-i');
+    args.push(...containers);
+
+    const { stdout, stderr } = await execAsync(`docker ${args.join(' ')}`, { 
+      timeout: DEFAULT_TIMEOUT,
+      cwd: process.cwd() 
+    });
+
+    const message = `▶️ Successfully started container(s): ${containers.join(', ')}\n${stdout}${stderr}`;
+    return createResponse('docker-start', message.trim(), false, process.cwd(), startTime);
+
+  } catch (error: any) {
+    return createResponse('docker-start', `Error starting containers: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Stop Docker containers
+ * @param containers Array of container names or IDs
+ * @param timeout Optional timeout in seconds
+ */
+export async function dockerStop(containers: string[], timeout?: number): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    if (!containers || containers.length === 0) {
+      return createResponse('docker-stop', 'Error: Please specify at least one container', true, process.cwd(), startTime);
+    }
+
+    const args = ['stop'];
+    if (timeout !== undefined) {
+      args.push('-t', timeout.toString());
+    }
+    args.push(...containers);
+
+    const { stdout, stderr } = await execAsync(`docker ${args.join(' ')}`, { 
+      timeout: DEFAULT_TIMEOUT,
+      cwd: process.cwd() 
+    });
+
+    const message = `⏹️ Successfully stopped container(s): ${containers.join(', ')}\n${stdout}${stderr}`;
+    return createResponse('docker-stop', message.trim(), false, process.cwd(), startTime);
+
+  } catch (error: any) {
+    return createResponse('docker-stop', `Error stopping containers: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Clean Docker system with different scopes
+ * @param scope Cleanup scope (all, images, containers, volumes, networks, cache)
+ * @param force Force cleanup without confirmation
+ * @param includeAll Include all images, not just dangling ones
+ */
+export async function dockerClean(scope: string = 'all', force?: boolean, includeAll?: boolean): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    const commands: string[] = [];
+    
+    switch (scope) {
+      case 'all':
+        commands.push(`docker system prune -a ${force ? '-f' : ''}`);
+        if (includeAll) commands.push(`docker image prune -a ${force ? '-f' : ''}`);
+        commands.push(`docker volume prune ${force ? '-f' : ''}`);
+        commands.push(`docker network prune ${force ? '-f' : ''}`);
+        break;
+      case 'images':
+        commands.push(`docker image prune ${includeAll ? '-a' : ''} ${force ? '-f' : ''}`);
+        break;
+      case 'containers':
+        commands.push(`docker container prune ${force ? '-f' : ''}`);
+        break;
+      case 'volumes':
+        commands.push(`docker volume prune ${force ? '-f' : ''}`);
+        break;
+      case 'networks':
+        commands.push(`docker network prune ${force ? '-f' : ''}`);
+        break;
+      case 'cache':
+        commands.push(`docker builder prune ${force ? '-f' : ''}`);
+        break;
+    }
+
+    const results = [];
+    for (const command of commands) {
+      try {
+        const { stdout, stderr } = await execAsync(command.trim(), { 
+          timeout: DEFAULT_TIMEOUT,
+          cwd: process.cwd() 
+        });
+        results.push(`${stdout}${stderr}`);
+      } catch (error: any) {
+        results.push(`Warning: ${error.message}`);
+      }
+    }
+
+    const message = `🧹 Docker cleanup (${scope}) completed:\n${results.join('\n')}`;
+    return createResponse('docker-clean', message.trim(), false, process.cwd(), startTime);
+
+  } catch (error: any) {
+    return createResponse('docker-clean', `Error during cleanup: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Development environment management
+ * @param command Development command (start, stop, restart, status, logs, shell, rebuild, clean)
+ * @param service Optional service name for targeted operations
+ * @param options Additional options
+ */
+export async function dockerDev(command: string, service?: string, options?: any): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    let dockerCommand = '';
+    
+    switch (command) {
+      case 'start':
+        dockerCommand = `docker-compose up --detach ${options?.build ? '--build' : ''}`;
+        break;
+      case 'stop':
+        dockerCommand = 'docker-compose down';
+        break;
+      case 'restart':
+        dockerCommand = 'docker-compose restart';
+        break;
+      case 'status':
+        dockerCommand = 'docker-compose ps';
+        break;
+      case 'logs':
+        dockerCommand = service ? `docker-compose logs -f ${service}` : 'docker-compose logs -f';
+        break;
+      case 'shell':
+        dockerCommand = `docker-compose exec ${service || 'app'} /bin/bash`;
+        break;
+      case 'rebuild':
+        dockerCommand = 'docker-compose build --no-cache';
+        break;
+      case 'clean':
+        dockerCommand = 'docker-compose down --volumes --remove-orphans';
+        break;
+      default:
+        return createResponse('docker-dev', `Error: Unknown command '${command}'`, true, process.cwd(), startTime);
+    }
+
+    const { stdout, stderr } = await execAsync(dockerCommand, { 
+      timeout: DEFAULT_TIMEOUT,
+      cwd: process.cwd() 
+    });
+
+    const message = `⚡ Development command '${command}' completed:\n${stdout}${stderr}`;
+    return createResponse('docker-dev', message.trim(), false, process.cwd(), startTime);
+
+  } catch (error: any) {
+    return createResponse('docker-dev', `Error in development command: ${error.message}`, true, process.cwd(), startTime);
+  }
+}
+
+/**
+ * Reset Docker system with different levels
+ * @param level Reset level (soft, hard, nuclear, factory)
+ * @param force Skip confirmation prompts
+ * @param keepVolumes Preserve named volumes
+ */
+export async function dockerReset(level: string = 'soft', force?: boolean, keepVolumes?: boolean): Promise<DockerOperationResult> {
+  const startTime = Date.now();
+  
+  try {
+    if (['hard', 'nuclear', 'factory'].includes(level) && !force) {
+      const warning = `⚠️ ${level.toUpperCase()} RESET WARNING: This will permanently delete ALL containers, images, volumes, and networks!\nTo proceed, call this function with force: true`;
+      return createResponse('docker-reset', warning, true, process.cwd(), startTime);
+    }
+
+    const commands: string[] = [];
+    
+    switch (level) {
+      case 'soft':
+        commands.push('docker container stop $(docker ps -q) || true');
+        commands.push('docker container prune -f');
+        commands.push('docker image prune -f');
+        if (!keepVolumes) commands.push('docker volume prune -f');
+        commands.push('docker network prune -f');
+        break;
+        
+      case 'hard':
+      case 'nuclear':
+      case 'factory':
+        commands.push('docker system prune -a --volumes -f');
+        commands.push('docker builder prune -a -f');
+        break;
+    }
+
+    const results = [];
+    for (const command of commands) {
+      try {
+        const { stdout, stderr } = await execAsync(command, { 
+          timeout: DEFAULT_TIMEOUT,
+          cwd: process.cwd() 
+        });
+        results.push(`${stdout}${stderr}`);
+      } catch (error: any) {
+        results.push(`Warning: ${error.message}`);
+      }
+    }
+
+    const message = `🔄 Docker ${level} reset completed:\n${results.join('\n')}`;
+    return createResponse('docker-reset', message.trim(), false, process.cwd(), startTime);
+
+  } catch (error: any) {
+    return createResponse('docker-reset', `Error during reset: ${error.message}`, true, process.cwd(), startTime);
   }
 }

@@ -1,102 +1,360 @@
 # Basic Docker Operations - CLI Aliases
 
-This directory contains basic Docker operation aliases that provide simplified access to essential Docker commands.
+This directory contains 8 essential Docker operation aliases that provide simplified access to the most commonly used Docker commands. Each alias is a standalone executable script with comprehensive help documentation and error handling.
 
 ## Overview
 
-The basic operations cover fundamental Docker tasks that every developer needs on a daily basis. Each alias is a standalone executable script that forwards commands to the main Docker MCP CLI with proper argument handling.
+Basic operations cover fundamental Docker tasks that every developer needs on a daily basis. These commands are designed to be simple, safe, and intuitive while providing access to the most important Docker functionality.
 
-## Available Aliases
+**All 11 Basic Commands:**
+- `dimages` - List and filter Docker images
+- `dps` - List running containers  
+- `dpsa` - List all containers (including stopped)
+- `dpull` - Pull images from registries
+- `drun` - Run containers with full option support
+- `dlogs` - View and follow container logs
+- `dexec` - Execute commands inside containers
+- `dbuild` - Build images from Dockerfiles
+- `dprune` - Clean up unused Docker objects
+- `dup` - Quick Docker Compose up (start services)
+- `ddown` - Quick Docker Compose down (stop services)
+
+**💡 Pro Tip:** Every command supports `--help` or `-h` for detailed usage information!
+
+## Command Details
 
 ### 📋 `dimages` - List Docker Images
 
-**Command:** `dimages [options]`
+**Purpose:** List all Docker images on your system with detailed information including repository, tag, image ID, creation date, and size.
 
-Lists all Docker images on your system with detailed information including repository, tag, image ID, creation time, and size.
+**Command:** `dimages [filter] [options]`
 
-**Options:**
-- `--filter <pattern>` - Filter images by name pattern
-- `--format <format>` - Format output using Go templates
-- `-q, --quiet` - Only show image IDs
-- `--all` - Show all images (including intermediate layers)
-- `--digests` - Show image digests
-- `--no-trunc` - Don't truncate output
+**Parameters:**
+- `[filter]` - Optional filter pattern to match image names (e.g., `dimages nginx`)
 
-**Examples:**
+**Essential Options:**
+- `-a, --all` - Show all images (including intermediate layers)
+- `-q, --quiet` - Only show image IDs (useful for scripting)
+- `--filter <key=value>` - Advanced filtering (dangling=true, before=<image>, etc.)
+- `--format <template>` - Format output using Go templates
+- `--digests` - Show image digests for content verification
+- `--no-trunc` - Don't truncate output (show full IDs and names)
+- `-h, --help` - Show detailed help information
+
+**Common Use Cases:**
 ```bash
-dimages                          # List all images
-dimages --filter nginx           # Show only nginx images
-dimages -q                       # Show only image IDs
+# Basic usage
+dimages                                  # List all images
+dimages --help                          # Show help
+
+# Filtering
+dimages nginx                           # Images containing 'nginx'
+dimages --filter "dangling=true"       # Untagged images
+dimages --filter "before=myapp:v1.0"   # Images created before myapp:v1.0
+
+# Output formatting
+dimages -q                              # Only IDs (for scripts)
 dimages --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+dimages --no-trunc                      # Full image information
+
+# Cleanup helpers
+dimages --filter "dangling=true" -q     # Get IDs of dangling images
 ```
 
+**Output Information:**
+- **REPOSITORY** - Image name/repository
+- **TAG** - Version tag (latest, v1.0, etc.)
+- **IMAGE ID** - Unique identifier (first 12 characters)
+- **CREATED** - When the image was created
+- **SIZE** - Total size of all layers
+
+**Practical Examples:**
+```bash
+# Development workflow
+dimages node                            # Find Node.js images
+dimages --filter "label=version=dev"    # Development images only
+dimages --format "{{.Repository}}:{{.Tag}}" | grep myapp
+
+# System maintenance
+dimages --filter "dangling=true"        # Find cleanup candidates
+dimages --all | wc -l                   # Count total images
+```
+
+**Related Commands:** `dpull`, `dbuild`, `drun`
 **MCP Tool:** `docker-images`
 
 ---
 
 ### 🟢 `dps` - List Running Containers
 
+**Purpose:** Display all currently running Docker containers with their status, ports, names, and resource usage.
+
 **Command:** `dps [options]`
 
-Lists all currently running Docker containers with their status, ports, and names.
+**Parameters:** None required - shows running containers by default
 
-**Options:**
-- `-a, --all` - Show all containers (running and stopped)
-- `-q, --quiet` - Only show container IDs
-- `--filter <filter>` - Filter containers (e.g., name=myapp)
-- `--format <format>` - Format output using Go templates
-- `--last <n>` - Show n last created containers
-- `--size` - Display total file sizes
+**Essential Options:**
+- `-a, --all` - Show all containers (running + stopped + paused)
+- `-q, --quiet` - Only show container IDs (perfect for scripting)
+- `-s, --size` - Display total file sizes (includes writable layer)
+- `-l, --latest` - Show only the latest created container
+- `-n, --last <number>` - Show the last n created containers
+- `--filter <key=value>` - Filter containers by various criteria
+- `--format <template>` - Custom output formatting with Go templates
+- `--no-trunc` - Don't truncate output (show full container IDs)
+- `-h, --help` - Show detailed help information
 
-**Examples:**
+**Filtering Options:**
 ```bash
-dps                              # List running containers
-dps -q                          # Show only container IDs
-dps --filter "name=nginx"       # Show containers with name containing 'nginx'
-dps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+# By status
+dps --filter "status=running"          # Only running containers
+dps --filter "status=exited"           # Only stopped containers
+
+# By name/label
+dps --filter "name=web"                # Containers with 'web' in name
+dps --filter "label=environment=prod"  # Production containers
+
+# By image
+dps --filter "ancestor=nginx"          # Containers from nginx image
+
+# By resource
+dps --filter "expose=80"               # Containers exposing port 80
 ```
 
+**Common Use Cases:**
+```bash
+# Basic monitoring
+dps                                     # Show running containers
+dps --help                             # Show help
+
+# System overview
+dps -a                                 # All containers (running + stopped)
+dps -s                                 # Include size information
+dps --latest                           # Most recently created
+
+# Scripting and automation
+dps -q                                 # Only container IDs
+dps -q --filter "status=exited"       # IDs of stopped containers
+dps --format "{{.Names}}"              # Only container names
+
+# Detailed monitoring
+dps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.RunningFor}}"
+dps --no-trunc                         # Full container information
+```
+
+**Output Information:**
+- **CONTAINER ID** - Unique identifier (first 12 characters)
+- **IMAGE** - Source image name and tag
+- **COMMAND** - Command being executed
+- **CREATED** - When container was created
+- **STATUS** - Current status (Up 2 hours, Exited (0) 5 minutes ago)
+- **PORTS** - Published ports (0.0.0.0:8080->80/tcp)
+- **NAMES** - Container name(s)
+- **SIZE** - Total file size (if -s flag used)
+
+**Practical Examples:**
+```bash
+# Development workflow
+dps                                     # Quick status check
+dps --filter "name=dev"                # Development containers
+dps --format "{{.Names}}: {{.Status}}" # Simple status overview
+
+# Production monitoring
+dps --filter "label=env=production"    # Production containers only
+dps -s --filter "status=running"       # Running containers with sizes
+
+# Debugging and cleanup
+dps -a --filter "status=exited"        # Find stopped containers
+dps -q --filter "status=created"       # Containers that never started
+```
+
+**Related Commands:** `dpsa` (all containers), `dlogs` (container logs), `dexec` (run commands)
 **MCP Tool:** `docker-containers`
 
 ---
 
 ### 📊 `dpsa` - List All Containers
 
+**Purpose:** Display all Docker containers on your system, including running, stopped, paused, and created containers.
+
 **Command:** `dpsa [options]`
 
-Lists all Docker containers including both running and stopped ones.
+**Parameters:** None required - shows all containers by default
 
-**Options:**
-- `-q, --quiet` - Only show container IDs
-- `--filter <filter>` - Filter containers
-- `--format <format>` - Format output using Go templates
-- `--last <n>` - Show n last created containers
-- `--size` - Display total file sizes
+**Essential Options:**
+- `-q, --quiet` - Only show container IDs (perfect for cleanup scripts)
+- `-s, --size` - Display total file sizes including writable layer size
+- `-l, --latest` - Show only the most recently created container
+- `-n, --last <number>` - Show the last n created containers
+- `--filter <key=value>` - Filter containers by various criteria
+- `--format <template>` - Custom output formatting with Go templates
+- `--no-trunc` - Don't truncate output (show full container IDs)
+- `-h, --help` - Show detailed help information
 
-**Examples:**
+**Common Use Cases:**
 ```bash
-dpsa                            # List all containers
-dpsa -q                         # Show only container IDs
-dpsa --filter "status=exited"   # Show only stopped containers
+# Basic usage
+dpsa                                    # Show all containers
+dpsa --help                            # Show help
+
+# Container management
+dpsa -q                                # Only container IDs (for scripts)
+dpsa -s                                # Include size information
+dpsa --latest                          # Most recent container
+
+# Filtering for cleanup
+dpsa --filter "status=exited"          # Stopped containers
+dpsa --filter "status=created"         # Containers that never started  
+dpsa --filter "status=dead"            # Dead containers
+
+# Advanced filtering
+dpsa --filter "name=test"              # Containers with 'test' in name
+dpsa --filter "since=container_name"   # Created after specific container
+dpsa --filter "before=container_name"  # Created before specific container
+
+# Output formatting
+dpsa --format "{{.Names}}: {{.Status}}"                    # Simple status
+dpsa --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"  # Custom table
+dpsa --no-trunc                        # Full container information
 ```
 
+**Practical Examples:**
+```bash
+# System cleanup preparation
+dpsa --filter "status=exited" -q       # Get IDs of stopped containers
+dpsa --filter "status=created" -q      # Containers that never started
+dpsa --filter "status=dead" -q         # Dead containers for cleanup
+
+# Development workflow
+dpsa --filter "name=dev"               # Development containers
+dpsa --latest --format "{{.Names}}: {{.Status}}" # Check recent container
+
+# Monitoring and analysis
+dpsa -s --filter "status=running"      # Running containers with sizes
+dpsa --format "{{.Names}}\t{{.RunningFor}}\t{{.Status}}" # Runtime overview
+```
+
+**Status Types Explained:**
+- **running** - Container is currently running
+- **exited** - Container stopped (may have run successfully or failed)
+- **created** - Container created but never started
+- **restarting** - Container is restarting
+- **removing** - Container is being removed
+- **paused** - Container is paused
+- **dead** - Container failed to start or run
+
+**Difference from `dps`:**
+- `dps` - Shows only **running** containers by default
+- `dpsa` - Shows **all** containers (running + stopped + created + paused)
+
+**Related Commands:** `dps` (running only), `dstop` (stop containers), `dlogs` (view logs)
 **MCP Tool:** `docker-containers` (with all=true parameter)
 
 ---
 
 ### ⬇️ `dpull` - Pull Docker Images
 
+**Purpose:** Download Docker images from registries (Docker Hub, AWS ECR, GitHub Container Registry, etc.) to your local system.
+
 **Command:** `dpull <image>[:<tag>] [options]`
 
-Pulls a Docker image from a registry (Docker Hub by default).
+**Parameters:**
+- `<image>` - Required. Image name to pull (e.g., nginx, ubuntu, node)
+- `[:<tag>]` - Optional. Specific version tag (default: latest)
 
-**Options:**
-- `-a, --all-tags` - Pull all tagged images in the repository
-- `--disable-content-trust` - Skip image verification (default true)
-- `--platform <platform>` - Set platform if server is multi-platform capable
-- `-q, --quiet` - Suppress verbose output
+**Essential Options:**
+- `-a, --all-tags` - Pull all tagged versions of the repository
+- `--platform <platform>` - Pull image for specific platform (linux/amd64, linux/arm64, etc.)
+- `--disable-content-trust` - Skip image signature verification (default: true)
+- `-q, --quiet` - Suppress verbose output during pull
+- `--pull-timeout <seconds>` - Set timeout for pull operations
+- `-h, --help` - Show detailed help information
 
-**Examples:**
+**Common Use Cases:**
+```bash
+# Basic image pulling
+dpull nginx                             # Pull nginx:latest
+dpull --help                           # Show help
+
+# Specific versions
+dpull nginx:alpine                      # Pull Alpine-based nginx
+dpull ubuntu:20.04                     # Pull Ubuntu 20.04 LTS
+dpull node:16-alpine                    # Pull Node.js 16 on Alpine
+
+# Pull from different registries
+dpull ghcr.io/user/myapp               # GitHub Container Registry
+dpull gcr.io/project/app:v1.0          # Google Container Registry
+dpull myregistry.azurecr.io/app        # Azure Container Registry
+
+# Platform-specific pulls
+dpull --platform linux/amd64 nginx     # Pull for x86-64
+dpull --platform linux/arm64 nginx     # Pull for ARM64 (Apple Silicon)
+dpull --platform linux/arm/v7 nginx    # Pull for ARM v7 (Raspberry Pi)
+
+# Advanced options
+dpull -a nginx                          # Pull all nginx tags
+dpull --quiet ubuntu:20.04              # Silent pull
+dpull --disable-content-trust myapp     # Skip signature verification
+```
+
+**Registry Examples:**
+```bash
+# Docker Hub (default registry)
+dpull nginx                            # From Docker Hub
+dpull library/nginx                    # Explicit library namespace
+dpull username/myapp                   # User repository
+
+# Other registries
+dpull gcr.io/google-containers/nginx   # Google Container Registry
+dpull ghcr.io/owner/repository         # GitHub Container Registry
+dpull quay.io/repository/image         # Quay.io registry
+```
+
+**Platform Architecture Options:**
+- `linux/amd64` - Standard x86-64 (Intel/AMD)
+- `linux/arm64` - ARM 64-bit (Apple M1/M2, AWS Graviton)
+- `linux/arm/v7` - ARM 32-bit v7 (Raspberry Pi)
+- `linux/arm/v6` - ARM 32-bit v6
+- `linux/386` - x86 32-bit
+- `windows/amd64` - Windows containers
+
+**Practical Examples:**
+```bash
+# Development environment setup
+dpull node:18-alpine                   # Lightweight Node.js
+dpull postgres:15                      # Latest PostgreSQL 15
+dpull redis:alpine                     # Lightweight Redis
+
+# Multi-platform development (Apple Silicon)
+dpull --platform linux/amd64 mysql:8.0  # Force x86 version
+dpull --platform linux/arm64 nginx       # Native ARM version
+
+# CI/CD preparation
+dpull -a myapp                         # Pull all tags for testing
+dpull --quiet --platform linux/amd64 myapp:latest  # Silent production pull
+
+# Registry authentication (if needed)
+# Run first: dlogin --username youruser
+dpull youruser/private-app             # Pull private image
+```
+
+**Output Information:**
+The command shows:
+- **Pull status** - Downloading, extracting, verifying
+- **Layer information** - Image layer IDs and progress
+- **Size information** - Downloaded/extracted sizes
+- **Final status** - Success confirmation with image ID
+
+**Error Handling:**
+- **Image not found** - Check spelling and tag availability
+- **Authentication required** - Use `dlogin` for private repositories
+- **Platform not available** - Try different platform or check image support
+- **Network issues** - Check internet connection and retry
+
+**Related Commands:** `dimages` (list pulled images), `drun` (run pulled images), `dlogin` (authenticate)
+**MCP Tool:** `docker-pull`
+
+---
 ```bash
 dpull nginx                     # Pull nginx:latest
 dpull nginx:alpine              # Pull specific tag
@@ -324,6 +582,156 @@ All aliases include comprehensive error handling:
 - Meaningful error messages
 - Proper exit codes
 - Timeout protection
+
+---
+
+### 🧹 `dprune` - Docker System Cleanup
+
+**Purpose:** Remove unused Docker objects (containers, images, networks, volumes) to reclaim disk space and maintain a clean Docker environment with flexible cleanup options.
+
+**Command:** `dprune [type] [options]`
+
+**Object Types:**
+- `system` - Remove all unused objects (containers, images, networks) - default
+- `images` - Remove unused images only
+- `containers` - Remove stopped containers only  
+- `volumes` - Remove unused volumes only (⚠️ DATA LOSS RISK)
+- `networks` - Remove unused networks only
+
+**Essential Options:**
+- `-f, --force` - Don't prompt for confirmation
+- `-a, --all` - Remove all unused images (not just dangling)
+- `--volumes` - Include volumes when using system prune
+- `--filter <filter>` - Apply filters (e.g., until=24h, label=env=test)
+- `-h, --help` - Show detailed help information
+
+**Common Use Cases:**
+```bash
+# Basic cleanup operations
+dprune --help                   # Show comprehensive help
+dprune                          # Interactive system cleanup (default)
+dprune system -f                # Force system cleanup without prompts
+dprune images                   # Remove dangling images only
+
+# Specific object cleanup
+dprune containers -f            # Remove all stopped containers
+dprune networks                 # Remove unused networks (interactive)
+dprune volumes -f               # Remove unused volumes (DANGEROUS!)
+
+# Advanced cleanup with filters
+dprune images -a                # Remove ALL unused images
+dprune system --volumes -f      # Full cleanup including volumes
+dprune images --filter "until=24h"  # Remove images older than 24 hours
+dprune containers --filter "label=temporary=true"  # Remove containers with specific label
+```
+
+**Safety Considerations:**
+- **Volume cleanup permanently deletes data** - backup important volumes first
+- **Image cleanup may affect deployments** - verify no critical apps depend on removed images
+- **Always test without -f flag** to see what will be removed before forcing
+- **Use filters** to avoid removing important objects accidentally
+
+**Output Information:**
+- Shows object type being cleaned up
+- Displays filter information when applied
+- Provides success/failure status
+- Warns about dangerous operations (volume cleanup)
+
+**Related Commands:** `dimages` (list images), `dps`/`dpsa` (list containers), `docker system df` (space usage)  
+**MCP Tool:** `docker-prune`
+
+---
+
+### 🚀 `dup` - Quick Docker Compose Up
+
+**Purpose:** Quick alias for `docker-compose up` - Start services defined in docker-compose.yml with simplified command interface.
+
+**Command:** `dup [options] [service...]`
+
+**Essential Options:**
+- `-d, --detach` - Run containers in background (detached mode)
+- `--build` - Build images before starting containers
+- `--force-recreate` - Recreate containers even if configuration hasn't changed
+- `--no-deps` - Don't start linked services
+- `--scale SERVICE=NUM` - Scale SERVICE to NUM instances
+- `-f, --file FILE` - Specify compose file (default: docker-compose.yml)
+- `-h, --help` - Show detailed help information
+
+**Common Use Cases:**
+```bash
+# Basic service management
+dup --help                      # Show comprehensive help
+dup                             # Start all services (foreground)
+dup -d                          # Start all services in background
+dup --build                     # Build images before starting
+
+# Specific services
+dup web database                # Start only web and database services
+dup -d web                      # Start web service in background
+dup --scale web=3               # Start with 3 web service instances
+
+# Advanced configurations
+dup -f docker-compose.prod.yml  # Use production compose file
+dup -d --build --force-recreate # Full rebuild and background start
+```
+
+**Workflow Integration:**
+- Use `dup -d` for background development services
+- Use `dup --build` when Dockerfile changes
+- Combine with `ddown` for clean stop/start cycles
+- Use `dps` to check running container status
+
+**Related Commands:** `ddown` (stop services), `dcompose` (full compose interface), `dps` (container status)  
+**MCP Tool:** `docker-compose`
+
+---
+
+### 🛑 `ddown` - Quick Docker Compose Down
+
+**Purpose:** Quick alias for `docker-compose down` - Stop and remove containers, networks, and optionally volumes and images.
+
+**Command:** `ddown [options]`
+
+**Essential Options:**
+- `-v, --volumes` - Remove named volumes declared in 'volumes' section (⚠️ DATA LOSS)
+- `--rmi TYPE` - Remove images (all|local)
+- `--remove-orphans` - Remove containers for services not in Compose file
+- `-f, --file FILE` - Specify compose file (default: docker-compose.yml)
+- `-t, --timeout TIMEOUT` - Shutdown timeout in seconds (default: 10)
+- `-h, --help` - Show detailed help information
+
+**Common Use Cases:**
+```bash
+# Basic service shutdown
+ddown --help                    # Show comprehensive help
+ddown                           # Stop and remove containers
+ddown --remove-orphans          # Remove orphaned containers too
+ddown -t 30                     # Use 30-second shutdown timeout
+
+# Cleanup operations (DANGEROUS)
+ddown -v                        # Stop services and remove volumes
+ddown --rmi all                 # Stop services and remove all images
+ddown --rmi local               # Stop services and remove local images
+ddown -v --rmi local            # Full cleanup - volumes and local images
+
+# Production usage
+ddown -f docker-compose.prod.yml # Use production compose file
+```
+
+**Safety Warnings:**
+- **`-v` flag removes volumes permanently** - backup important data first
+- **`--rmi` removes images** - may affect other containers using same images
+- **Always verify** what will be removed before using destructive flags
+
+**Workflow Integration:**
+- Use `ddown` for clean development environment shutdown
+- Use `dup` after `ddown` for clean restart cycles
+- Combine with `dprune` for comprehensive cleanup
+
+**Related Commands:** `dup` (start services), `dcompose` (full compose interface), `dprune` (system cleanup)  
+**MCP Tool:** `docker-compose`
+
+---
 
 ## Related Documentation
 
