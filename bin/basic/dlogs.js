@@ -6,7 +6,7 @@ import path from 'path';
 import chalk from 'chalk';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__dirname);
+const __dirname = path.dirname(__filename);
 
 // Enhanced CLI styling using chalk
 const colors = {

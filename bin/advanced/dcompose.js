@@ -1,11 +1,30 @@
 #!/usr/bin/env node
 
-const { spawn } = require('child_process');
-const path = require('path');
-const chalk = require('chalk');
+import { spawn, execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import chalk from 'chalk';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Enhanced CLI styling using chalk
+const colors = {
+  title: chalk.cyan.bold,
+  command: chalk.cyan,
+  option: chalk.yellow,
+  success: chalk.green,
+  error: chalk.red,
+  warning: chalk.yellow,
+  info: chalk.blue,
+  dim: chalk.gray,
+  white: chalk.white,
+  bright: chalk.bold
+};
 
 // Icons for better UX
 const icon = {
+  docker: '🐳',
   compose: '🐙',
   success: '✅',
   error: '❌',
@@ -88,7 +107,6 @@ if (args.length === 0) {
 // Check if docker-compose command exists, fallback to docker compose
 let composeCommand = 'docker-compose';
 try {
-  const { execSync } = require('child_process');
   execSync('docker-compose --version', { stdio: 'ignore' });
 } catch (error) {
   composeCommand = 'docker compose';

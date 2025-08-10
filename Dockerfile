@@ -1,6 +1,10 @@
 # Docker MCP Server - Multi-stage Docker Build
 # This Dockerfile creates an optimized container for the Docker MCP Server
-# with Docker client capabilities and organized CLI aliases (basic/advanced workflows)
+# with Docker client capabilities and organized CLI aliases
+# • 8 Basic Operations: dimages, dps, dpsa, dpull, drun, dlogs, dexec, dbuild
+# • 19 Advanced Workflows: dcompose, dup, ddown, dnetwork, dvolume, dinspect, 
+#   dprune, dlogin, dlogout, dpublish, dbridge, ddev, dclean, dstop, dstart, 
+#   drestart, drm, dreset, dlist
 
 # Build stage
 FROM node:20-alpine AS builder
@@ -22,7 +26,7 @@ COPY pnpm-lock.yaml ./
 COPY tsconfig.json ./
 
 # Install pnpm and dependencies
-RUN npm install -g pnpm && \
+RUN npm install -g pnpm@latest && \
     pnpm install --frozen-lockfile && \
     pnpm store prune
 
@@ -32,7 +36,7 @@ COPY bin/ ./bin/
 COPY docker-cli.js ./
 
 # Build the TypeScript project
-RUN npm run build
+RUN pnpm build
 
 # Production stage
 FROM node:20-alpine AS production
@@ -65,7 +69,13 @@ COPY --from=builder --chown=mcp:nodejs /app/docker-cli.js ./
 COPY --from=builder --chown=mcp:nodejs /app/bin ./bin
 RUN chmod +x bin/basic/*.js && \
     chmod +x bin/advanced/*.js && \
-    chmod +x docker-cli.js
+    chmod +x docker-cli.js && \
+    chmod +x bin/docker-mcp-helper.js
+
+# Verify CLI aliases are executable (quick test)
+RUN node bin/basic/dimages.js --help > /dev/null && \
+    node bin/advanced/dcompose.js --help > /dev/null && \
+    echo "✅ All CLI aliases verified successfully"
 
 # Create Docker configuration directory
 RUN mkdir -p /home/mcp/.docker && \
@@ -86,7 +96,7 @@ EXPOSE 3000
 USER mcp
 
 # Create symlinks for global CLI access (optional)
-ENV PATH="/app/bin:$PATH"
+ENV PATH="/app/bin:/app/bin/basic:/app/bin/advanced:$PATH"
 
 # Security settings
 ENV NODE_ENV=production
@@ -102,8 +112,8 @@ CMD ["node", "dist/index.js"]
 # Metadata labels
 LABEL \
     org.opencontainers.image.title="Docker MCP Server" \
-    org.opencontainers.image.description="Enhanced Docker workflow management through MCP with 8 basic operations, 16 advanced workflows, and comprehensive container management" \
-    org.opencontainers.image.version="1.8.4" \
+    org.opencontainers.image.description="Enhanced Docker workflow management through MCP with 8 basic operations, 19 advanced workflows, and comprehensive container management" \
+    org.opencontainers.image.version="2.0.2" \
     org.opencontainers.image.authors="Sharique Chaudhary" \
     org.opencontainers.image.source="https://github.com/0xshariq/docker-mcp-server" \
     org.opencontainers.image.licenses="ISC" \
