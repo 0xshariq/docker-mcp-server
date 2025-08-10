@@ -17,9 +17,6 @@ importers:
       chalk:
         specifier: ^5.5.0
         version: 5.5.0
-      express:
-        specifier: ^5.1.0
-        version: 5.1.0
     devDependencies:
       '@types/node':
         specifier: ^24.0.14

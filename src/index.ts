@@ -618,229 +618,147 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
+    let result: any;
     switch (name) {
       case "docker-images":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerImages(args))
-            }
-          ]
-        };
+        result = await dockerImages(args);
+        break;
 
       case "docker-containers":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerContainers(args))
-            }
-          ]
-        };
+        result = await dockerContainers(args);
+        break;
 
       case "docker-pull":
         if (!args?.imageName) {
           throw new Error("imageName parameter is required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerPullImage(args))
-            }
-          ]
-        };
+        result = await dockerPullImage(args);
+        break;
 
       case "docker-run":
         if (!args?.imageName) {
           throw new Error("imageName parameter is required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerRunContainer(args))
-            }
-          ]
-        };
+        result = await dockerRunContainer(args);
+        break;
 
       case "docker-logs":
         if (!args?.containerId) {
           throw new Error("containerId parameter is required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerLogs(args))
-            }
-          ]
-        };
+        result = await dockerLogs(args);
+        break;
 
       case "docker-build":
         if (!args?.contextPath) {
           throw new Error("contextPath parameter is required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerBuild(args))
-            }
-          ]
-        };
+        result = await dockerBuild(args);
+        break;
 
       case "docker-compose":
         if (!args?.command) {
           throw new Error("command parameter is required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerCompose(args))
-            }
-          ]
-        };
+        result = await dockerCompose(args);
+        break;
 
       case "docker-network":
         if (!args?.action) {
           throw new Error("action parameter is required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerNetworks(args))
-            }
-          ]
-        };
+        result = await dockerNetworks(args);
+        break;
 
       case "docker-volume":
         if (!args?.action) {
           throw new Error("action parameter is required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerVolumes(args))
-            }
-          ]
-        };
+        result = await dockerVolumes(args);
+        break;
 
       case "docker-inspect":
         if (!args?.objectType || !args?.objectId) {
           throw new Error("objectType and objectId parameters are required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerInspect(args))
-            }
-          ]
-        };
+        result = await dockerInspect(args);
+        break;
 
       case "docker-exec":
         if (!args?.containerId || !args?.command) {
           throw new Error("containerId and command parameters are required");
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerExec(args))
-            }
-          ]
-        };
+        result = await dockerExec(args);
+        break;
 
       case "docker-prune":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerPrune(args))
-            }
-          ]
-        };
+        result = await dockerPrune(args);
+        break;
 
       case "docker-login":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerLogin(args))
-            }
-          ]
-        };
+        result = await dockerLogin(args);
+        break;
 
       case "docker-logout":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerLogout(args))
-            }
-          ]
-        };
+        result = await dockerLogout(args);
+        break;
 
       case "docker-bridge":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerBridge(args))
-            }
-          ]
-        };
+        result = await dockerBridge(args);
+        break;
 
       case "docker-list":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerList(args))
-            }
-          ]
-        };
-
+        result = await dockerList(args);
+        break;
 
       case "docker-publish":
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await dockerPublish(args ?? {}))
-            }
-          ]
-        };
+        if (!args?.imageName) {
+          throw new Error("imageName parameter is required");
+        }
+        result = await dockerPublish(args.imageName as string, args);
+        break;
 
       case "docker-restart":
-        return await dockerRestart((args?.containers as string[]) || [], args?.timeout as number);
+        result = await dockerRestart((args?.containers as string[]) || [], args?.timeout as number);
+        break;
 
       case "docker-remove":
-        return await dockerRemove((args?.containers as string[]) || [], args?.force as boolean, args?.volumes as boolean);
+        result = await dockerRemove((args?.containers as string[]) || [], args?.force as boolean, args?.volumes as boolean);
+        break;
 
       case "docker-start":
-        return await dockerStart((args?.containers as string[]) || [], args?.attach as boolean, args?.interactive as boolean);
+        result = await dockerStart((args?.containers as string[]) || [], args?.attach as boolean, args?.interactive as boolean);
+        break;
 
       case "docker-stop":
-        return await dockerStop((args?.containers as string[]) || [], args?.timeout as number);
+        result = await dockerStop((args?.containers as string[]) || [], args?.timeout as number);
+        break;
 
       case "docker-clean":
-        return await dockerClean(args?.scope as string, args?.force as boolean, args?.includeAll as boolean);
+        result = await dockerClean(args?.scope as string, args?.force as boolean, args?.includeAll as boolean);
+        break;
 
       case "docker-dev":
-        return await dockerDev((args?.command as string) || 'status', args?.service as string, args?.options as any);
+        result = await dockerDev((args?.command as string) || 'status', args?.service as string, args?.options as any);
+        break;
 
       case "docker-reset":
-        return await dockerReset(args?.level as string, args?.force as boolean, args?.keepVolumes as boolean);
+        result = await dockerReset(args?.level as string, args?.force as boolean, args?.keepVolumes as boolean);
+        break;
 
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
+
+    // Always wrap result in MCP ServerResult format
+    return {
+      content: [
+        {
+          type: "text",
+          text: typeof result === "string" ? result : JSON.stringify(result)
+        }
+      ]
+    };
   } catch (error) {
     return {
       content: [
