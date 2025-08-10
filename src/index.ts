@@ -61,7 +61,7 @@ import {
   dockerClean,
   dockerDev,
   dockerReset
-} from "./docker";
+} from "./docker.js";
 
 // Initialize MCP server with enhanced metadata and capabilities
 const server = new Server({

@@ -1,42 +1,6 @@
-# Docker MCP Server - Multi-stage Docker Build
+# Docker MCP Server - Docker Build
 # This Dockerfile creates an optimized container for the Docker MCP Server
-# with Docker client capabilities and organized CLI aliases
-# • 8 Basic Operations: dimages, dps, dpsa, dpull, drun, dlogs, dexec, dbuild
-# • 19 Advanced Workflows: dcompose, dup, ddown, dnetwork, dvolume, dinspect, 
-#   dprune, dlogin, dlogout, dpublish, dbridge, ddev, dclean, dstop, dstart, 
-#   drestart, drm, dreset, dlist
-
-# Build stage
-FROM node:20-alpine AS builder
-
-# Set working directory
-WORKDIR /app
-
-# Install build dependencies
-RUN apk add --no-cache \
-    docker-cli \
-    docker-compose \
-    git \
-    openssh-client \
-    ca-certificates
-
-# Copy package files
-COPY package*.json ./
-COPY pnpm-lock.yaml ./
-COPY tsconfig.json ./
-
-# Install pnpm and dependencies
-RUN npm install -g pnpm@latest && \
-    pnpm install --frozen-lockfile && \
-    pnpm store prune
-
-# Copy source code
-COPY src/ ./src/
-COPY bin/ ./bin/
-COPY docker-cli.js ./
-
-# Build the TypeScript project
-RUN pnpm build
+# using the published npm package for easy deployment
 
 # Production stage
 FROM node:20-alpine AS production
@@ -59,31 +23,16 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
-# Copy built application from builder stage
-COPY --from=builder --chown=mcp:nodejs /app/dist ./dist
-COPY --from=builder --chown=mcp:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=mcp:nodejs /app/package*.json ./
-COPY --from=builder --chown=mcp:nodejs /app/docker-cli.js ./
+# Install the published npm package globally
+RUN npm install -g @0xshariq/docker-mcp-server@2.0.2
 
-# Copy and make CLI aliases executable
-COPY --from=builder --chown=mcp:nodejs /app/bin ./bin
-RUN chmod +x bin/basic/*.js && \
-    chmod +x bin/advanced/*.js && \
-    chmod +x docker-cli.js && \
-    chmod +x bin/docker-mcp-helper.js
-
-# Verify CLI aliases are executable (quick test)
-RUN node bin/basic/dimages.js --help > /dev/null && \
-    node bin/advanced/dcompose.js --help > /dev/null && \
-    echo "✅ All CLI aliases verified successfully"
+# Create data directory for Docker operations
+RUN mkdir -p /app/data && \
+    chown mcp:nodejs /app/data
 
 # Create Docker configuration directory
 RUN mkdir -p /home/mcp/.docker && \
     chown mcp:nodejs /home/mcp/.docker
-
-# Create data directory for volumes
-RUN mkdir -p /app/data && \
-    chown mcp:nodejs /app/data
 
 # Set Docker environment variables
 ENV DOCKER_HOST=unix:///var/run/docker.sock
@@ -95,19 +44,16 @@ EXPOSE 3000
 # Switch to non-root user
 USER mcp
 
-# Create symlinks for global CLI access (optional)
-ENV PATH="/app/bin:/app/bin/basic:/app/bin/advanced:$PATH"
-
 # Security settings
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=512"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "console.log('Docker MCP Server is healthy')" || exit 1
+    CMD docker-mcp-server --version || exit 1
 
-# Set default command
-CMD ["node", "dist/index.js"]
+# Set default command to start MCP server
+CMD ["docker-mcp-server"]
 
 # Metadata labels
 LABEL \
@@ -117,4 +63,5 @@ LABEL \
     org.opencontainers.image.authors="Sharique Chaudhary" \
     org.opencontainers.image.source="https://github.com/0xshariq/docker-mcp-server" \
     org.opencontainers.image.licenses="ISC" \
-    org.opencontainers.image.documentation="https://github.com/0xshariq/docker-mcp-server/blob/main/README.md"
+    org.opencontainers.image.documentation="https://github.com/0xshariq/docker-mcp-server/blob/main/README.md" \
+    org.opencontainers.image.url="https://www.npmjs.com/package/@0xshariq/docker-mcp-server"
