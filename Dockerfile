@@ -59,7 +59,7 @@ CMD ["docker-mcp-server"]
 LABEL \
     org.opencontainers.image.title="Docker MCP Server" \
     org.opencontainers.image.description="Enhanced Docker workflow management through MCP with 8 basic operations, 19 advanced workflows, and comprehensive container management" \
-    org.opencontainers.image.version="2.0.2" \
+    org.opencontainers.image.version="2.0.4" \
     org.opencontainers.image.authors="Sharique Chaudhary" \
     org.opencontainers.image.source="https://github.com/0xshariq/docker-mcp-server" \
     org.opencontainers.image.licenses="ISC" \
