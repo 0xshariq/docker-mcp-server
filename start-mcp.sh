@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # === CONFIGURATION ===
-PROJECT_DIR="/home/simplysabir/desktop/shariq-projects/docker-mcp-server"
+PROJECT_DIR="/home/simplysabir/desktop/dev-ecosystem/services/docker-mcp-server"
 NODE_VERSION="24.4.1"
 SERVER_FILE="src/index.ts"
 DIST_FILE="dist/index.js"
