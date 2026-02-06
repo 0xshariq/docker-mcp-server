@@ -42,6 +42,26 @@ docker info
 
 ## Installation Methods
 
+### Quick Setup for MCP Clients
+
+Add this configuration to your MCP client settings:
+
+```json
+{
+  "mcpServers": {
+    "docker-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@0xshariq/docker-mcp-server@latest"]
+    }
+  }
+}
+```
+
+**Where to add this:**
+- **Claude Desktop**: `~/.config/claude-desktop/claude_desktop_config.json` (Linux) or `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+- **VS Code Cline**: `.vscode/mcp.json`
+- **Other MCP Clients**: Check your client's configuration documentation
+
 ### NPM Package Installation (Recommended)
 
 The easiest way to install Docker MCP Server is via npm package:

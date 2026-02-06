@@ -7,12 +7,14 @@ A comprehensive Model Context Protocol (MCP) server that provides advanced Docke
 Docker MCP Server is not just another Docker wrapper - it's a complete Docker workflow enhancement system designed to make Docker operations more intuitive, secure, and efficient:
 
 ### 🎯 **Unified Interface**
+
 - **MCP Protocol Integration**: Seamlessly works with MCP-compatible tools and IDEs
 - **CLI Convenience**: 25+ carefully crafted aliases for common Docker workflows
 - **Consistent API**: All operations follow the same patterns and conventions
 - **Cross-Platform**: Full support for Linux, macOS, and Windows environments
 
 ### 🔒 **Security-First Design**
+
 - **Docker-Managed Security**: All password operations handled by Docker daemon for maximum security
 - **Zero Password Exposure**: Passwords never appear in command history, process lists, or arguments
 - **Token Authentication Support**: Full support for Personal Access Tokens and service accounts
@@ -21,12 +23,14 @@ Docker MCP Server is not just another Docker wrapper - it's a complete Docker wo
 - **Permission Management**: Proper handling of Docker daemon permissions and credential storage
 
 ### 🚀 **Developer Experience**
+
 - **Comprehensive Help System**: Every command includes detailed documentation with `--help`
 - **Smart Defaults**: Sensible default configurations for common use cases
 - **Error Prevention**: Built-in safety checks and confirmation prompts for destructive operations
 - **Rich Output**: Formatted, colored output with clear status indicators
 
 ### 📊 **Advanced Operations**
+
 - **Complete Container Lifecycle**: From build to publish with comprehensive registry support
 - **Multi-Container Management**: Docker Compose integration with service orchestration
 - **Registry Publishing**: Advanced image publishing with multi-platform support and automated workflows
@@ -35,6 +39,27 @@ Docker MCP Server is not just another Docker wrapper - it's a complete Docker wo
 - **Development Workflows**: Specialized commands for development environments
 
 ## 📦 Installation
+
+### Quick Setup for MCP Clients
+
+Add this configuration to your MCP client settings:
+
+```json
+{
+  "mcpServers": {
+    "docker-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "@0xshariq/docker-mcp-server@latest"]
+    }
+  }
+}
+```
+
+**Where to add this:**
+
+- **Claude Desktop**: `claude_desktop_config.json`
+- **VS Code Cline**: `.vscode/mcp.json`
+- **Other MCP Clients**: Check your client's configuration documentation
 
 ### Simple Installation (Recommended)
 
@@ -73,11 +98,13 @@ dlist                       # Verify it works
 ### What You Need First
 
 Before installing, make sure you have:
+
 - **Node.js 18+** - [Download here](https://nodejs.org/)
 - **Docker** - [Install Docker](https://docs.docker.com/get-docker/)
 - **npm** (comes with Node.js)
 
 Check if you have them:
+
 ```bash
 node --version              # Should show v18 or higher
 docker --version           # Should show Docker version
@@ -86,6 +113,7 @@ docker --version           # Should show Docker version
 ## 🚀 Quick Start
 
 ### Try It Out
+
 Once installed, try these commands to see Docker MCP Server in action:
 
 ```bash
@@ -106,6 +134,7 @@ dpublish myapp:v1.0         # Publish image to registry
 ### 📚 Documentation
 
 **Learn More:**
+
 - **[📖 Basic Commands](bin/basic/README.md)** - 8 essential Docker operations made simple
 - **[⚡ Advanced Commands](bin/advanced/README.md)** - 14 powerful tools for complex workflows
 - **[🔧 MCP Server Setup](docs/mcp-setup.md)** - Connect with Claude Desktop and other MCP clients
@@ -113,13 +142,17 @@ dpublish myapp:v1.0         # Publish image to registry
 ## 🎯 What You Get
 
 ### Basic Commands (8 aliases)
+
 Simple, everyday Docker operations that just work:
+
 - **Container Management**: List, run, stop, and inspect containers
-- **Image Operations**: Pull, build, and manage Docker images  
+- **Image Operations**: Pull, build, and manage Docker images
 - **Logs & Debugging**: View logs and execute commands inside containers
 
 ### Advanced Commands (14 aliases)
+
 Powerful tools for complex Docker workflows:
+
 - **Multi-Container Apps**: Full Docker Compose integration
 - **Registry Operations**: Secure login and image publishing to Docker Hub, GitHub, AWS, etc.
 - **Network & Storage**: Advanced networking and volume management
@@ -129,12 +162,15 @@ Powerful tools for complex Docker workflows:
 ## 🔧 MCP Server Setup
 
 ### For Claude Desktop
+
 1. **Find your Claude config file:**
+
    - **Linux**: `~/.config/claude-desktop/claude_desktop_config.json`
    - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 2. **Add this to your config:**
+
    ```json
    {
      "mcpServers": {
@@ -149,6 +185,7 @@ Powerful tools for complex Docker workflows:
 3. **Restart Claude Desktop** and you'll see Docker tools available!
 
 ### Universal Startup Script
+
 Use our startup script for automatic setup with any MCP client:
 
 ```bash
@@ -165,7 +202,7 @@ docker-mcp-server/
 ├── src/                    # TypeScript source code
 ├── bin/                    # CLI alias scripts
 │   ├── basic/             # 8 basic Docker operations
-│   └── advanced/          # 14 advanced Docker operations  
+│   └── advanced/          # 14 advanced Docker operations
 ├── help/                  # Documentation for all commands
 ├── start-mcp.sh          # Universal MCP server startup script
 ├── docker-cli.js         # Main CLI wrapper
@@ -173,6 +210,7 @@ docker-mcp-server/
 ```
 
 **📚 Complete Documentation:**
+
 - **[Basic Commands Reference](bin/basic/README.md)** - 8 essential Docker operations
 - **[Advanced Commands Reference](bin/advanced/README.md)** - 14 powerful workflow tools
 - **[All Available Commands](docs/commands.md)** - Complete syntax and examples
@@ -180,15 +218,20 @@ docker-mcp-server/
 ## ⚡ All Available Commands
 
 ### Basic Operations (8 commands)
+
 Essential Docker operations for daily use:
+
 - `dimages`, `dps`, `dpsa`, `dpull`, `drun`, `dlogs`, `dexec`, `dbuild`
 
-### Advanced Operations (14 commands)  
+### Advanced Operations (14 commands)
+
 Powerful tools for complex workflows:
+
 - `dcompose`, `dup`, `ddown`, `dnetwork`, `dvolume`, `dinspect`, `dprune`
 - `dlogin`, `dlogout`, `dpublish`, `dbridge`, `ddev`, `dclean`, `dstop`, `dreset`
 
 ### Utility Commands (3 commands)
+
 - `docker-mcp-server`, `dms`, `dlist`
 
 **📖 See detailed documentation:** Use `dlist` command or check the README files linked above.
@@ -196,6 +239,7 @@ Powerful tools for complex workflows:
 ## 🔧 Development
 
 ### For Contributors
+
 ```bash
 # Setup development environment
 git clone https://github.com/0xshariq/docker-mcp-server.git
@@ -212,6 +256,7 @@ npm run clean              # Clean build files
 ## 🧪 Testing
 
 ### Quick Test
+
 ```bash
 # After installation, test these commands
 dlist                      # Should show all 25 commands
@@ -220,6 +265,7 @@ dimages                    # Should list images
 ```
 
 ### Test MCP Integration
+
 ```bash
 ./start-mcp.sh             # Should start without errors
 ```
@@ -227,6 +273,7 @@ dimages                    # Should list images
 ## 🆘 Common Issues
 
 ### "Command not found"
+
 ```bash
 # Make sure npm global bin is in your PATH
 echo $PATH | grep $(npm config get prefix)
@@ -236,6 +283,7 @@ export PATH="$(npm config get prefix)/bin:$PATH"
 ```
 
 ### "Docker daemon not running"
+
 ```bash
 # Check Docker status
 docker info
@@ -248,13 +296,15 @@ sudo systemctl start docker
 ```
 
 ### "Permission denied"
+
 ```bash
 # Add yourself to docker group (Linux)
 sudo usermod -aG docker $USER
 # Then logout and login again
 ```
 
-**📋 More Help:** 
+**📋 More Help:**
+
 - Check `dlist --help` for all commands
 - See [Troubleshooting Guide](docs/troubleshooting.md) for detailed solutions
 
@@ -271,8 +321,9 @@ ISC License
 ## 🤝 Contributing
 
 Contributions welcome! Please:
+
 1. Fork the repository
-2. Create a feature branch  
+2. Create a feature branch
 3. Test your changes
 4. Submit a pull request
 
